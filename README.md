@@ -31,7 +31,7 @@ First be sure that the <u>BLE REPL daemon is enabled</u> and running:
   ble_uart_repl.start()
   ```
 
-*These scripts are in upybleutils directory. (Originals from [MicroPython repo bluetooth examples]())*
+*These scripts are in upybleutils directory. (Originals from [MicroPython repo bluetooth examples](https://github.com/micropython/micropython/tree/master/examples/bluetooth))*
 
 #### Installing :
 

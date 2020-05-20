@@ -13,11 +13,11 @@ def readme():
 
 
 setup(name='upyble',
-      version='0.0.1',
+      version='0.0.2',
       description='Command line tool for Bluetooth Low Energy MicroPython devices',
       long_description=readme(),  # readme()
       long_description_content_type='text/markdown',
-      url='http://github.com/Carglglz/upydev',
+      url='http://github.com/Carglglz/upyble',
       author='Carlos Gil Gonzalez',
       author_email='carlosgilglez@gmail.com',
       classifiers=[

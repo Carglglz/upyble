@@ -74,7 +74,7 @@ parser = argparse.ArgumentParser(prog='upyble',
                                  description='Command line tool for Bluetooth Low Energy MicroPython devices',
                                  formatter_class=argparse.RawTextHelpFormatter,
                                  usage=usag)
-parser.version = '0.0.1'
+parser.version = '0.0.2'
 parser.add_argument(
     "m", metavar='Mode', help=helparg).completer = ChoicesCompleter(keywords_mode)
 parser.add_argument('-v', action='version')
