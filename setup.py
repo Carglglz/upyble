@@ -14,7 +14,7 @@ def readme():
 
 setup(name='upyble',
       version='0.0.1',
-      description='Command line tool for BLE MicroPython devices',
+      description='Command line tool for Bluetooth Low Energy MicroPython devices',
       long_description=readme(),  # readme()
       long_description_content_type='text/markdown',
       url='http://github.com/Carglglz/upydev',
