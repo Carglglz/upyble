@@ -40,7 +40,7 @@ helparg = '''
 - check:    to check local machine Bluetooth characterisctics (MACOS only)
 - scan:     to scan for BLE devices see -n for max number of scans
 - tscan:    to scan for BLE devices, results is table format
-- sconf:    to scan and configure a device that machts a name -d [NAME]
+- sconf:    to scan and configure a device that matches a name -d [NAME]
 - config:   to configure a device use -t to indicate UUID of the device
 - get_services: to get services of a device
 - see: To get specific info about a devices group use -G option as "see -G [GROUP NAME]"
@@ -60,14 +60,18 @@ helparg = '''
 '''
 
 usag = """%(prog)s [Mode] [options]
+
+This means that if the first argument is not a Mode keyword or a
+it assumes it is a 'raw' upy command to send to the upy device
 """
 help_dv = "To point the command to a specific device saved in the global group"
 # UPY MODE KEYWORDS AND COMMANDS
+# TODO: READ / WRITE / SUBSCRIBE TO SERVICE
 keywords_mode = ['config', 'scan', 'tscan', 'sconf', 'get_services',
                  'brepl', 'ble', 'make_group', 'mg_group', 'see', 'check']
 
 parser = argparse.ArgumentParser(prog='upyble',
-                                 description='Command line tool for BLE MicroPython devices',
+                                 description='Command line tool for Bluetooth Low Energy MicroPython devices',
                                  formatter_class=argparse.RawTextHelpFormatter,
                                  usage=usag)
 parser.version = '0.0.1'
