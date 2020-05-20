@@ -1,0 +1,467 @@
+#!/usr/bin/env python
+# PYTHON_ARGCOMPLETE_OK
+
+import sys
+import os
+import argparse
+import json
+import upyble
+# import time
+import signal
+import shlex
+# from binascii import hexlify
+import subprocess
+import argcomplete
+from argcomplete.completers import ChoicesCompleter
+from upyble.upybledevice import ble_scan, BASE_BLE_DEVICE
+
+
+def see_global_devs():
+    try:
+        with open('{}/UPYBLE_G.config'.format(upyble.__path__[0]), 'r', encoding='utf-8') as group:
+            devices = json.loads(group.read())
+            # print(devices)
+        devs = list(devices.keys())
+        return devs
+    except Exception as e:
+        return []
+
+
+def see_groups():
+    avoid_files = ['upyble_.config', 'help.config']
+    local_cwd = [group_file.split('.')[0] for group_file in os.listdir(
+    ) if '.config' in group_file and group_file not in 'upyble_.config']
+    globl_wd = [group_file.split('.')[0] for group_file in os.listdir(
+        upyble.__path__[0]) if '.config' in group_file and group_file not in avoid_files]
+    return local_cwd + globl_wd
+
+
+helparg = '''
+- check:    to check local machine Bluetooth characterisctics (MACOS only)
+- scan:     to scan for BLE devices see -n for max number of scans
+- tscan:    to scan for BLE devices, results is table format
+- sconf:    to scan and configure a device that machts a name -d [NAME]
+- config:   to configure a device use -t to indicate UUID of the device
+- get_services: to get services of a device
+- see: To get specific info about a devices group use -G option as "see -G [GROUP NAME]"
+- brepl: to enter the BLE SHELL-REPL
+- ble: to access brepl in a 'ssh' style command
+      if a device is stored in a global group called "UPYBLE_G" (this
+       needs to be created first doing e.g. "upyble make_group -g -f UPYBLE_G -devs foo_device UUID")
+       The device can be accessed as "upyble ble@foo_device" or redirect any command as e.g.
+       "upyble get_services -@foo_device".
+- make_group: to make a group of boards to send commands to. Use -f for the name
+              of the group and -devs option to indicate a name and uuid of each board.
+              (To store the group settings globally use -g option)
+
+- mg_group: to manage a group of boards to send commands to. Use -G for the name
+              of the group and -add option to add devices (indicate a name and uuid
+              of each board) or -rm to remove devices (indicated by name)
+'''
+
+usag = """%(prog)s [Mode] [options]
+"""
+help_dv = "To point the command to a specific device saved in the global group"
+# UPY MODE KEYWORDS AND COMMANDS
+keywords_mode = ['config', 'scan', 'tscan', 'sconf', 'get_services',
+                 'brepl', 'ble', 'make_group', 'mg_group', 'see', 'check']
+
+parser = argparse.ArgumentParser(prog='upyble',
+                                 description='Command line tool for BLE MicroPython devices',
+                                 formatter_class=argparse.RawTextHelpFormatter,
+                                 usage=usag)
+parser.version = '0.0.1'
+parser.add_argument(
+    "m", metavar='Mode', help=helparg).completer = ChoicesCompleter(keywords_mode)
+parser.add_argument('-v', action='version')
+parser.add_argument('-t', help='device target uuid')
+parser.add_argument("-f", help='script or file name', required=False)
+parser.add_argument("-@", help=help_dv, required=False).completer = ChoicesCompleter(see_global_devs())
+parser.add_argument('-n', type=int, default=3, help='number of max scans to try')
+parser.add_argument('-d', default='auto', help='device to config if available')
+parser.add_argument(
+    "-st", help='shows target ip if using config file', required=False, default=False, action='store_true')
+parser.add_argument(
+    "-g", help='to store/read the configuration file globally, if there is no config file in working directory, \n it uses the global file',
+    required=False, default=False, action='store_true')
+parser.add_argument('-devs', help='to indicate the devices that will be part of a group, use as -devs [DEV_1] [UUID_1] [DEV_2]...',
+                    nargs='+')
+parser.add_argument('-add', help='to indicate the devices that will be added to a group, use as -add [DEV_1] [UUID_1] [DEV_2]...',
+                    nargs='+')
+parser.add_argument('-rm', help='to indicate the devices that will be removed from a group, use as -rm [DEV_1] [DEV_2]...',
+                    nargs='+')
+parser.add_argument(
+    '-G', help='to indicate the group of devices that the command is directed to').completer = ChoicesCompleter(see_groups())
+
+
+argcomplete.autocomplete(parser)
+args = parser.parse_args()
+
+
+def address_entry_point(entry_point, group_file=''):
+    if group_file == '':
+        group_file = 'UPYBLE_G'
+    # print(group_file)
+    if '{}.config'.format(group_file) not in os.listdir() or args.g:
+        group_file = '{}/{}'.format(upyble.__path__[0], group_file)
+    with open('{}.config'.format(group_file), 'r', encoding='utf-8') as group:
+        devices = json.loads(group.read())
+        # print(devices)
+    devs = devices.keys()
+    # NAME ENTRY POINT
+    if entry_point in devs:
+        dev_uuid = devices[entry_point]
+        # dev_pass = devices[entry_point][1]
+        return (dev_uuid)
+    else:
+        print('Device not configured in global group: {}'.format(group_file))
+        sys.exit()
+
+
+def see():
+    if args.G is None:
+        pass
+        # help_file = '{}/help.config'.format(upyble.__path__[0])
+        # with open(help_file, 'r') as helpref:
+        #     help_dict = json.loads(helpref.read())
+        # columns, rows = os.get_terminal_size(0)
+        # print('\n'.join(textwrap.wrap(help_dict[args.c], columns-3)))
+    else:
+        group_file = '{}.config'.format(args.G)
+        if group_file not in os.listdir() or args.g:
+            group_file = '{}/{}.config'.format(upyble.__path__[0], args.G)
+        with open(group_file, 'r') as group:
+            group_devs = (json.loads(group.read()))
+        print('GROUP NAME: {}'.format(args.G))
+        print('# DEVICES: {}'.format(len(group_devs.keys())))
+        for key in group_devs.keys():
+            dev_uuid = group_devs[key]
+            print('DEVICE NAME: {}, UUID: {}'.format(key, dev_uuid))
+
+#############################################
+
+
+def ble_repl(uuid, usr=None):
+
+    if usr is not None:
+
+        blerepl_cmd_str = 'blerepl -t {} -dev {}'.format(uuid, usr)
+    else:
+
+        blerepl_cmd_str = 'blerepl -t {} '.format(uuid)
+    blerepl_cmd = shlex.split(blerepl_cmd_str)
+
+    old_action = signal.signal(signal.SIGINT, signal.SIG_IGN)
+
+    def preexec_function(action=old_action):
+        signal.signal(signal.SIGINT, action)
+
+    try:
+        blerepl = subprocess.call(blerepl_cmd, preexec_fn=preexec_function)
+    except KeyboardInterrupt:
+        pass
+
+    sys.exit()
+#############################################
+
+# upyble MODES:
+
+# @ ENTRY
+
+
+if "@" in args.m:
+    args.m, entry_point = args.m.split('@')
+
+# CONFIG:
+if args.m == 'config':
+    if args.t is None:
+        # if args.sec:
+        #     print('Secure config mode:')
+        #     args.t = input('IP of device: ')
+        #     args.p = getpass.getpass(prompt='Password: ', stream=None)
+        # else:
+            print('Target uuid required, see -t')
+            sys.exit()
+    upyble_uuid = args.t
+    upy_conf = {'uuid': upyble_uuid}
+    file_conf = 'upyble_.config'
+    if args.g:
+        file_conf = '{}/upyble_.config'.format(upyble.__path__[0])
+    with open(file_conf, 'w') as config_file:
+        config_file.write(json.dumps(upy_conf))
+    if args.g:
+        print('upyble device settings saved globally!')
+    else:
+        print('upyble device settings saved in working directory!')
+    sys.exit()
+
+
+# CHECK
+
+if args.m == 'check':
+    if sys.platform == "darwin":
+        subprocess.call(shlex.split('system_profiler SPBluetoothDataType'))
+        sys.exit()
+# SCAN MODE
+if args.m == 'scan':
+    devs = []
+    n = 0
+    print('Scanning...')
+    while n < args.n:
+        try:
+            devs = ble_scan()
+            n += 1
+            if len(devs) > 0:
+                break
+            else:
+                print('Scanning...')
+        except KeyboardInterrupt:
+            sys.exit()
+    if len(devs) == 0:
+        print('No BLE device found')
+    else:
+        print('BLE device/s found: {}'.format(len(devs)))
+        for dev in devs:
+            print("NAME: {}, UUID: {}, RSSI: {} dBm".format(dev.name, dev.address,
+                                                      dev.rssi))
+    sys.exit()
+
+# TSCAN
+if args.m == 'tscan':
+    devs = []
+    n = 0
+    print('Scanning...')
+    while n < args.n:
+        try:
+            devs = ble_scan()
+            n += 1
+            if len(devs) > 0:
+                break
+            else:
+                print('Scanning...')
+        except KeyboardInterrupt:
+            sys.exit()
+    if len(devs) == 0:
+        print('No BLE device found')
+    else:
+        print('BLE device/s found: {}'.format(len(devs)))
+        print('=' * 78)
+        print('{0:^20} | {1:^40} | {2:^10} |'.format(
+            'NAME', 'UUID', 'RSSI (dBm)'))
+        for dev in devs:
+
+            print('{0:^20} | {1:^40} | {2:^10} |'.format(dev.name, dev.address,
+                                                         dev.rssi))
+    sys.exit()
+# SCAN CONFIG
+if args.m == 'sconf':
+    bdev = None
+    if args.d == "auto":
+        devs = []
+        n = 0
+        print('Scanning...')
+        while n < args.n:
+            try:
+                devs = ble_scan()
+                n += 1
+                if len(devs) > 0:
+                    break
+                else:
+                    print('Scanning...')
+            except KeyboardInterrupt:
+                sys.exit()
+        bdev = devs[0]
+    else:
+        devs = []
+        n = 0
+        print('Scanning...')
+        while n < args.n:
+            try:
+                devs = ble_scan()
+                n += 1
+                if len(devs) > 0:
+                    break
+                else:
+                    print('Scanning...')
+            except KeyboardInterrupt:
+                sys.exit()
+        for dev in devs:
+            if args.d in dev.name:
+                bdev = dev
+                break
+
+    if len(devs) == 0:
+        print('No BLE device found')
+    else:
+        print('BLE device/s found: {}'.format(len(devs)))
+        for dev in devs:
+            print("NAME: {}, UUID: {}, RSSI: {} dBm".format(dev.name, dev.address,
+                                                      dev.rssi))
+        if bdev:
+            print('Saving {} configuration...'.format(bdev.name))
+            upyble_uuid = bdev.address
+            upy_conf = {'uuid': upyble_uuid}
+            file_conf = 'upyble_.config'
+            if args.g:
+                file_conf = '{}/upyble_.config'.format(upyble.__path__[0])
+            with open(file_conf, 'w') as config_file:
+                config_file.write(json.dumps(upy_conf))
+            if args.g:
+                print('upyble device settings saved globally!')
+            else:
+                print('upyble device settings saved in working directory!')
+        else:
+            print('No BLE device found that matchs name "{}"'.format(args.d))
+    sys.exit()
+
+# MAKE GROUP
+if args.m == 'make_group':
+    group_file = '{}.config'.format(args.f)
+    group_dict = dict(zip(args.devs[::2], args.devs[1::2]))
+    if args.g:
+        group_file = '{}/{}.config'.format(upyble.__path__[0], args.f)
+    with open(group_file, 'w') as group:
+        group.write(json.dumps(group_dict))
+
+    if args.g:
+        print('Group settings saved globally!')
+    else:
+        print('Group settings saved in working directory!')
+    print('Upy BLE devices group created!')
+    print('GROUP NAME: {}'.format(args.f))
+    print('# DEVICES: {}'.format(len(group_dict.keys())))
+    for key in group_dict.keys():
+        print('DEVICE NAME: {}, UUID: {}'.format(key, group_dict[key]))
+    sys.exit()
+
+
+# UPYDEV GROUP COMMAND
+if args.G is not None:
+    try:
+        group_file = args.G
+        # print(group_file)
+        if '{}.config'.format(group_file) not in os.listdir() or args.g:
+            group_file = '{}/{}'.format(upyble.__path__[0], args.G)
+        if args.m == 'see':
+            see()
+            sys.exit()
+        if args.m == 'mg_group':
+            if args.add is not None:
+                group_dict = dict(zip(args.add[::2], args.add[1::2]))
+                with open('{}.config'.format(group_file), 'r', encoding='utf-8') as group:
+                    devices = json.loads(group.read())
+                    devices.update(group_dict)
+                with open('{}.config'.format(group_file), 'w', encoding='utf-8') as group:
+                    group.write(json.dumps(devices))
+                print('Upy devices group updated!')
+                print('GROUP NAME: {}'.format(group_file.split('/')[-1]))
+                print('# DEVICES ADDED: {}'.format(len(group_dict.keys())))
+                for key in group_dict.keys():
+                    print('DEVICE NAME: {}, UUID: {}'.format(
+                        key, group_dict[key]))
+            elif args.rm is not None:
+                group_dict_rm = args.rm
+                removed_devs = {}
+                with open('{}.config'.format(group_file), 'r', encoding='utf-8') as group:
+                    devices = json.loads(group.read())
+                    for dev in group_dict_rm:
+                        # del devices[dev]
+                        if dev not in list(devices.keys()):
+                            pass
+                        else:
+                            removed_devs.update({dev: devices.pop(dev)})
+
+                with open('{}.config'.format(group_file), 'w', encoding='utf-8') as group:
+                    group.write(json.dumps(devices))
+                print('Upy devices group updated!')
+                print('GROUP NAME: {}'.format(group_file.split('/')[-1]))
+                print('# DEVICES REMOVED: {}'.format(len(removed_devs.keys())))
+                for key in removed_devs.keys():
+                    print('DEVICE NAME: {}, UUID: {}'.format(
+                        key, removed_devs[key]))
+
+            sys.exit()
+        sys.exit()
+    except Exception as e:
+        print(e)
+        print('file not found, please create a group first')
+        sys.exit()
+
+# upyble LOOKS FOR upyble_.CONFIG FILE
+if args.t is None:
+    try:
+        file_conf = 'upyble_.config'
+        if file_conf not in os.listdir() or args.g:
+            file_conf = '{}/upyble_.config'.format(upyble.__path__[0])
+
+        with open(file_conf, 'r') as config_file:
+            upy_conf = json.loads(config_file.read())
+        args.t = upy_conf['uuid']
+
+        # @ ENTRY POINT
+        # if args.b is not None:
+        #     if "@" in args.b:
+        #         gf, entryp = args.b.split('@')
+        #         args.t, args.p = address_entry_point(entryp, gf)
+        if vars(args)['@'] is not None:
+                entryp = vars(args)['@']
+                args.t = address_entry_point(entryp)
+        # if args.apmd:
+        #     args.t = '192.168.4.1'
+        if args.st:
+            print('Target UUID: {}'.format(args.t))
+    except Exception as e:
+        print('upyble_.config file not found, please provide target and\n\
+        \rpassword or create config file with command "config" (see help)')
+        sys.exit()
+
+# GET SERVICES
+
+if args.m == 'get_services':
+    print('Getting services...')
+    bdev = BASE_BLE_DEVICE(args.t)
+    bdev.connect(n_tries=args.n, show_servs=True, log=False)
+    if not bdev.connected:
+        print('Device not reachable try again.')
+        pass
+    else:
+        bdev.disconnect(log=False)
+    sys.exit()
+# RAW COMMANDS
+# UPYDEV RAW COMMAND MODE: (WHEN ARGUMENT Mode is not in keyword list)
+
+if args.m not in keywords_mode:
+    cmd = args.m
+    bdev = BASE_BLE_DEVICE(args.t)
+    bdev.connect(log=False)
+    if not bdev.connected:
+        print('Device not reachable, try again.')
+    else:
+        bdev.wr_cmd(cmd=cmd, follow=True)
+        bdev.disconnect(log=False)
+    sys.exit()
+
+# BLE_SHELL-REPL
+elif args.m == 'brepl':
+    if vars(args)['@'] is not None:
+        entryp = vars(args)['@']
+        ble_repl(args.t, usr=entryp)
+    else:
+        ble_repl(args.t)
+
+elif args.m == 'ble':
+    group_file = 'UPYBLE_G'
+    # print(group_file)
+    if '{}.config'.format(group_file) not in os.listdir() or args.g:
+        group_file = '{}/{}'.format(upyble.__path__[0], group_file)
+    with open('{}.config'.format(group_file), 'r', encoding='utf-8') as group:
+        devices = json.loads(group.read())
+        # print(devices)
+    devs = devices.keys()
+    # NAME ENTRY POINT
+    if entry_point in devs:
+        dev_uuid = devices[entry_point]
+        try:
+            ble_repl(dev_uuid, usr=entry_point)
+        except Exception as e:
+            print('UUID INVALID or DEVICE NOT REACHABLE')

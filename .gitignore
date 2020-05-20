@@ -1,0 +1,20 @@
+# Compiled python modules.
+*.pyc
+
+# Setuptools distribution folder.
+/dist/
+
+# Setuptools build folder.
+/build/
+
+# Python egg metadata, regenerated from source files by setuptools.
+/*.egg-info
+/*.egg
+
+# DS_Store files
+.DS_Store
+
+SSL_CUSTOM_AUTH.py
+/upyutils/ble*
+
+_BLE*
