@@ -80,7 +80,6 @@ This means that if the first argument is not a Mode keyword it assumes it is a '
 
 ##### Help: `$ upyble -h`
 
-
 ------
 
 #### uPyble Mode/Tools:
@@ -102,3 +101,21 @@ This means that if the first argument is not a Mode keyword it assumes it is a '
 - **`upyble brepl`**: to enter the BLE SHELL-REPL
 
 - **`upyble ble@[DEVICE]`**: to access brepl in a 'ssh' style command if a device is stored in a global group called `UPYBLE_G` (this needs to be created first doing e.g. `$ upyble make_group -g -f UPYBLE_G -devs foo_device UUID`) The device can be accessed as `$ upyble ble@foo_device` or redirect any command as e.g. `$ upyble get_services -@foo_device`.
+
+
+____
+
+#### SEE WHAT'S GOING ON UNDER THE HOOD:
+
+_ℹ️ Host and the device must be connected._
+
+  In a terminal window open a 'serial repl' with `upydev srepl --port [USBPORT]` command
+
+  In another window use upydev normally. Now in the terminal window with the serial repl you can see which commands are sent.
+
+
+____
+
+### ABOUT
+
+To see more information about upyble dependencies, requirements, tested devices, etc see [ABOUT](https://github.com/Carglglz/upyble/blob/master/DOCS/ABOUT.md) doc.
