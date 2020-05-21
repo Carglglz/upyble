@@ -46,7 +46,7 @@ from prompt_toolkit import print_formatted_text
 from prompt_toolkit.shortcuts import (radiolist_dialog, message_dialog,
                                       input_dialog, yes_no_dialog)
 
-# TODO: PUT, GET, EDIT/COPY MODE, C-C KBI
+# TODO: PUT, GET --> like serial, EDIT?, C-C KBI
 
 
 class BLE_REPL_server:
@@ -95,6 +95,30 @@ class BLE_REPL_server:
 
     def do_color(self):
             self.colored(b'\n'.join(self.dev.raw_buff.splitlines()[1:-1]).decode())
+
+    async def as_paste_buff(self, cmd, **kargs):
+        # print('Here')
+        long_command = cmd
+        await self.dev.ble_client.write_gatt_char(self.dev.writeables['RX'], b'\x05')
+        await asyncio.sleep(1, loop=self.dev.loop)
+        # await self.dev.ble_client.write_gatt_char(self.dev.writeables['RX'], b'\x04')
+        # print(long_command)
+        lines = long_command.split('\n')
+        # print(lines)
+        for line in lines:
+            self.flush_conn()
+            await asyncio.sleep(0.2, loop=self.dev.loop)
+            data = bytes(line + '\n', 'utf-8')
+            if len(data) > 100:
+                for i in range(0, len(data), 100):
+                    await self.dev.ble_client.write_gatt_char(self.dev.writeables['RX'], data[i:i+100])
+            else:
+                await self.dev.ble_client.write_gatt_char(self.dev.writeables['RX'], data)
+        output = await self.dev.as_wr_cmd('\x04', **kargs)
+
+        return output
+        # output = await self.dev.as_wr_cmd('\x05' + cmd + '\x04', **kargs)
+        # return output
 
 
 # ARGPARSE HERE TO ACCEPT TARGET AND PASSWORD
@@ -2766,157 +2790,182 @@ def toggle_shell_mode(event):
         # ble_cp.sh_repl('from upysh import *', no_raw_buff=True)
         # ble_cp.sh_repl('from upysh import *', silent=True)
         ble_cp.dev.output = None
-#
-#
-# @kb.add('c-c')
-# def send_KBI(event):
-#     # def send_KBI():
-#     try:
-#         last_cmd = ''
-#         if edit_mode['E']:
-#             prompt['p'] = shell_prompt['s']
-#             event.app.current_buffer.reset()
-#         else:
-#
-#             ble_cp.sh_repl('\x03') # KBI
-#
-#             paste_flag['p'] = False
-#             if not shell_mode['S']:
-#                 prompt['p'] = d_prompt
-#                 last_cmd = event.app.current_buffer.document.text
-#             if shell_mode['S']:
-#                 print('^C')
-#             event.app.current_buffer.reset()
-#     except Exception as e:
-#         pass
-#
-#     def cmd_kbi(command=last_cmd):
-#         if prompt['p'] == ">>> ":
-#             print(prompt['p'] + command)
-#         elif prompt['p'] == shell_prompt['s']:
-#             if edit_mode['E'] is True:
-#                 edit_mode['E'] = False
-#                 print("<-----Edition Cancelled---->")
-#                 print('Press ESC, ENTER to exit and return to shell')
-#     run_in_terminal(cmd_kbi)
-#
-#
-# @kb.add('c-e')
-# def paste_mode(event):
-#     "PASTE MODE IN REPL, EDIT MODE IN SHELL MODE"
-#     if not shell_mode['S']:
-#         paste_flag['p'] = True
-#         event.app.current_buffer.reset()
-#         # event.app.current_buffer.insert_text('import')
-#
-#         def cmd_paste():
-#             print(
-#                 'paste mode; Ctrl-C to cancel, Ctrl-D to finish, Then ESC, ENTER to exit paste mode')
-#             print("===")
-#             prompt['p'] = ""
-#         run_in_terminal(cmd_paste)
-#     else:
-#         if edit_mode['E']:
-#             def cmd_paste():
-#                 print('Edit Mode; Ctrl-C to cancel, Ctrl-D to finish, then ESC, ENTER')
-#                 print("#<---- File: {} --->".format(edit_mode['File']))
-#                 prompt['p'] = ""
-#             run_in_terminal(cmd_paste)
-#             event.app.current_buffer.reset()
-#             espdev.long_output = []
-#             ble_cp.dev.output = None
-#             espdev.response = ''
-#             ble_cp.sh_repl("cat('{}')".format(edit_mode['File']))
-#             file_content = ble_cp.dev.output
-#             try:
-#                 process_content = file_content
-#             except Exception as e:
-#                 process_content = ' '
-#             if isinstance(file_content, str):
-#                 event.app.current_buffer.insert_text(process_content)
-#         else:
-#             # "Move cursor to final position"
-#             buff_text = event.app.current_buffer.document.text
-#             event.app.current_buffer.reset()
-#             event.app.current_buffer.insert_text(buff_text, move_cursor=True)
-#
-# @kb.add('c-d')
-# def paste_mode_exit(event):
-#     "PASTE MODE exit in REPL, EDIT MODE exit in SHELL"
-#     # event.app.current_buffer.insert_text('import')
-#
-#     def cmd_paste_exit(buff_P=paste_buffer['B']):
-#             buff_text = '\n'.join(
-#                 buff_P + [event.app.current_buffer.document.text])
-#             if buff_text is not None and buff_text != '':
-#                 try:
-#                     ble_cp.paste_buff(buff_text)
-#                     ble_cp.sh_repl("\x04", follow=True)
-#                 except KeyboardInterrupt:
-#                     time.sleep(0.2)
-#                     ble_cp.sh_repl('\x03', silent=True,
-#                                     traceback=True)  # KBI
-#                     time.sleep(0.2)
-#                     for i in range(1):
-#                         ble_cp.sh_repl('\x0d', silent=True)
-#                         ble_cp.flush_conn()
-#                     pass
-#                 ble_cp.dev.output = None
-#                 time.sleep(1)
-#                 ble_cp.flush_conn()
-#                 ble_cp.flush_conn()
-#
-#             event.app.current_buffer.reset()
-#
-#             print(">>> ")
-#             prompt['p'] = ">>> "
-#
-#     def cmd_edit_exit(file_to_edit=edit_mode['File']):
-#             buff_text = ''.join([event.app.current_buffer.document.text])
-#             if buff_text is not None and buff_text != '':
-#                 send_custom_sh_cmd(
-#                     "_file_to_edit = open('{}','w')".format(file_to_edit))
-#                 send_custom_sh_cmd("nl = '\\n'")
-#                 print('Writing to file...')
-#                 lines_to_write = buff_text.split('\n')
-#                 for line in lines_to_write:
-#                     if line != ' ' and line != "" and line != '':
-#                         send_custom_sh_cmd(
-#                             '_file_to_edit.write("{}")'.format(line))
-#
-#                         send_custom_sh_cmd('_file_to_edit.write(nl)')
-#
-#                 send_custom_sh_cmd("_file_to_edit.close()")
-#                 send_custom_sh_cmd("gc.collect()")
-#                 time.sleep(0.5)
-#                 ble_cp.flush_conn()
-#                 ble_cp.flush_conn()
-#             event.app.current_buffer.reset()
-#
-#             print("File {} edited succesfully!".format(file_to_edit))
-#             print('PRESS ESC, THEN ENTER TO EXIT EDIT MODE')
-#     if not shell_mode['S']:
-#         if paste_flag['p']:
-#             # print(paste_buffer['B'])
-#             run_in_terminal(cmd_paste_exit)
-#             paste_buffer['B'] = ['']
-#         else:
-#             ble_cp.sh_repl('\x04', follow=True)
-#             time.sleep(0.2)
-#             ble_cp.dev.serial.close()
-#             time.sleep(1)
-#             ble_cp.dev.serial.open()
-#             ble_cp.sh_repl('import os;import gc;from upysh import *', silent=True)
-#             ble_cp.flush_conn()
-#         paste_flag['p'] = False
-#     else:
-#         if edit_mode['E']:
-#             run_in_terminal(cmd_edit_exit)
-#             prompt['p'] = shell_prompt['s']
-#         edit_mode['E'] = False
-#     # paste_buffer['B'] = ['']  # RESET PASTE BUFFER
-#
-#
+
+
+@kb.add('c-c')
+def send_KBI(event):
+
+    async def run_kb():
+        try:
+            last_cmd = ''
+            if edit_mode['E']:
+                prompt['p'] = shell_prompt['s']
+                event.app.current_buffer.reset()
+            else:
+                ble_cp.dev.output = None
+                print('KeyboardInterrupt')
+                await ble_cp.as_sh_repl(ble_cp.dev._kbi,
+                                        follow=True)
+
+                paste_flag['p'] = False
+                if not shell_mode['S']:
+                    prompt['p'] = d_prompt
+                    last_cmd = event.app.current_buffer.document.text
+                if shell_mode['S']:
+                    print('^C')
+                event.app.current_buffer.reset()
+        except Exception as e:
+            pass
+
+        def cmd_kbi(command=last_cmd):
+            if prompt['p'] == ">>> ":
+                print(prompt['p'] + command)
+            elif prompt['p'] == shell_prompt['s']:
+                if edit_mode['E'] is True:
+                    edit_mode['E'] = False
+                    print("<-----Edition Cancelled---->")
+                    print('Press ESC, ENTER to exit and return to shell')
+        cmd_kbi()
+
+        return None
+
+    async def f():
+        async with in_terminal():
+            await run_kb()
+
+    loop = asyncio.get_event_loop()
+    loop.create_task(f())
+
+
+@kb.add('c-e')
+def paste_mode(event):
+    "PASTE MODE IN REPL, EDIT MODE IN SHELL MODE"
+
+    async def run_kb():
+        ble_cp.dev.output = None
+        if not shell_mode['S']:
+            paste_flag['p'] = True
+            event.app.current_buffer.reset()
+            # event.app.current_buffer.insert_text('import')
+
+            def cmd_paste():
+                print(
+                    'paste mode; Ctrl-C to cancel, Ctrl-D to finish, Then ESC, ENTER to exit paste mode')
+                print("===")
+                prompt['p'] = ""
+            cmd_paste()
+        else:
+            if edit_mode['E']:
+                def cmd_paste():
+                    print('Edit Mode; Ctrl-C to cancel, Ctrl-D to finish, then ESC, ENTER')
+                    print("#<---- File: {} --->".format(edit_mode['File']))
+                    prompt['p'] = ""
+                cmd_paste()
+                event.app.current_buffer.reset()
+                # espdev.long_output = []
+                ble_cp.dev.output = None
+                ble_cp.dev.response = ''
+                await ble_cp.as_sh_repl("cat('{}')".format(edit_mode['File']),
+                                        silent=True, rtn=True)
+                file_content = ble_cp.dev.output
+                try:
+                    process_content = file_content
+                except Exception as e:
+                    process_content = ' '
+                if isinstance(file_content, str):
+                    event.app.current_buffer.insert_text(process_content)
+            else:
+                # "Move cursor to final position"
+                buff_text = event.app.current_buffer.document.text
+                event.app.current_buffer.reset()
+                event.app.current_buffer.insert_text(buff_text, move_cursor=True)
+        return None
+
+    async def f():
+        async with in_terminal():
+            await run_kb()
+
+    loop = asyncio.get_event_loop()
+    loop.create_task(f())
+
+
+@kb.add('c-d')
+def paste_mode_exit(event):
+    "PASTE MODE exit in REPL, EDIT MODE exit in SHELL"
+    # event.app.current_buffer.insert_text('import')
+    # print([event.app.current_buffer.document.text])
+    async def run_kb():
+        if not shell_mode['S']:
+            if paste_flag['p']:
+                buff_P = paste_buffer['B']
+                buff_text = '\n'.join(
+                    buff_P + [event.app.current_buffer.document.text])
+                # print(buff_text.splitlines())
+                if buff_text is not None and buff_text != '':
+                    try:
+                        await ble_cp.as_paste_buff(buff_text, follow=True)
+                        # ble_cp.sh_repl("\x04", follow=True)
+                    except KeyboardInterrupt:
+                        # time.sleep(0.2)
+                        # ble_cp.sh_repl('\x03', silent=True,
+                        #                 traceback=True)  # KBI
+                        # time.sleep(0.2)
+                        # for i in range(1):
+                        #     ble_cp.sh_repl('\x0d', silent=True)
+                        #     ble_cp.flush_conn()
+                        pass
+                    ble_cp.dev.output = None
+                    # time.sleep(1)
+                    # ble_cp.flush_conn()
+                    # ble_cp.flush_conn()
+
+                event.app.current_buffer.reset()
+
+                print(">>> ")
+                prompt['p'] = ">>> "
+                paste_buffer['B'] = ['']
+            else:
+                pass
+            paste_flag['p'] = False
+        else:
+            if edit_mode['E']:
+                file_to_edit = edit_mode['File']
+                buff_text = ''.join([event.app.current_buffer.document.text])
+                if buff_text is not None and buff_text != '':
+                    send_custom_sh_cmd(
+                        "_file_to_edit = open('{}','w')".format(file_to_edit))
+                    send_custom_sh_cmd("nl = '\\n'")
+                    print('Writing to file...')
+                    lines_to_write = buff_text.split('\n')
+                    for line in lines_to_write:
+                        if line != ' ' and line != "" and line != '':
+                            send_custom_sh_cmd(
+                                '_file_to_edit.write("{}")'.format(line))
+
+                            send_custom_sh_cmd('_file_to_edit.write(nl)')
+
+                    send_custom_sh_cmd("_file_to_edit.close()")
+                    send_custom_sh_cmd("gc.collect()")
+                    time.sleep(0.5)
+                    ble_cp.flush_conn()
+                    ble_cp.flush_conn()
+                event.app.current_buffer.reset()
+
+                print("File {} edited succesfully!".format(file_to_edit))
+                print('PRESS ESC, THEN ENTER TO EXIT EDIT MODE')
+                prompt['p'] = shell_prompt['s']
+            edit_mode['E'] = False
+        # paste_buffer['B'] = ['']  # RESET PASTE BUFFER
+        return None
+
+    async def f():
+        async with in_terminal():
+            await run_kb()
+
+    loop = asyncio.get_event_loop()
+    loop.create_task(f())
+
+
 @kb.add('tab')
 def tab_press(event):
     "Tab autocompletion info"
@@ -3022,41 +3071,78 @@ def tab_press(event):
             except Exception as e:
                 pass
 
-        def tab_cmd_info(rest_part=rest, flag=glb, buff=buff_text):
-            try:
-                if ble_cp.dev.output is not None:
-                    ble_cp.dev.get_output()
-                    if glb:
-                        kw_line_buff = event.app.current_buffer.document.text.split()
-                        if len(kw_line_buff) > 0 and len(kw_line_buff) <= 2:
-                            if 'import' == kw_line_buff[0] or 'from' == kw_line_buff[0]:
-                                ble_cp.dev.output = ble_cp.dev.output + frozen_modules['SUB']
-                    if isinstance(ble_cp.dev.output, str):
-                        # print(ble_cp.dev.output)
-                        pass
-                    else:
-                        if rest != '':  # print attributes
-                            result = [
-                                val for val in ble_cp.dev.output if val.startswith(rest)]
-                            if len(result) > 1:
-                                comm_part = os.path.commonprefix(result)
-                                if comm_part == rest:
-                                    print('>>> {}'.format(buff_text))
-                                    print_table(result, autowide=True, sort=False)
+            def tab_cmd_info(rest_part=rest, flag=glb, buff=buff_text):
+                try:
+                    if ble_cp.dev.output is not None:
+                        ble_cp.dev.get_output()
+                        if glb:
+                            kw_line_buff = event.app.current_buffer.document.text.split()
+                            if len(kw_line_buff) > 0 and len(kw_line_buff) <= 2:
+                                if 'import' == kw_line_buff[0] or 'from' == kw_line_buff[0]:
+                                    ble_cp.dev.output = ble_cp.dev.output + frozen_modules['SUB']
+                        if isinstance(ble_cp.dev.output, str):
+                            # print(ble_cp.dev.output)
+                            pass
+                        else:
+                            if rest != '':  # print attributes
+                                result = [
+                                    val for val in ble_cp.dev.output if val.startswith(rest)]
+                                if len(result) > 1:
+                                    comm_part = os.path.commonprefix(result)
+                                    if comm_part == rest:
+                                        print('>>> {}'.format(buff_text))
+                                        print_table(result, autowide=True, sort=False)
+                                    else:
+                                        event.app.current_buffer.insert_text(
+                                            comm_part[len(rest):])
                                 else:
                                     event.app.current_buffer.insert_text(
-                                        comm_part[len(rest):])
+                                        result[0][len(rest):])
                             else:
-                                event.app.current_buffer.insert_text(
-                                    result[0][len(rest):])
-                        else:
-                            if not glb:
-                                if shell_mode['S']:  # print dirs/files
-                                    result = [val for val in ble_cp.dev.output if val.startswith(
-                                        buff_text.split('/')[-1])]
+                                if not glb:
+                                    if shell_mode['S']:  # print dirs/files
+                                        result = [val for val in ble_cp.dev.output if val.startswith(
+                                            buff_text.split('/')[-1])]
+                                        if len(result) > 1:
+                                            comm_part = os.path.commonprefix(result)
+                                            if comm_part == buff_text.split('/')[-1]:
+                                                if shell_mode['S']:
+                                                    last_cmd = event.app.current_buffer.document.text
+                                                    if local_path['p'] == '':
+                                                        g_p = [val[1]
+                                                               for val in prompt['p'][1:5]]
+                                                        b_p = [val[1]
+                                                               for val in prompt['p'][5:]]
+                                                        color_p = "\33[32;1m{}\033[0m:\u001b[34;1m{}\033[0m{}".format(
+                                                            "".join(g_p[:-1]), "".join(b_p), last_cmd)
+                                                        print(color_p)
+                                                    else:
+                                                        m_p = [prompt['p'][0][1]]
+                                                        g_p = [val[1]
+                                                               for val in prompt['p'][1:5]]
+                                                        b_p = [val[1]
+                                                               for val in prompt['p'][5:]]
+                                                        color_p = "\u001b[35;1m{}\033[0m\33[32;1m{}\033[0m:\u001b[34;1m{}\033[0m{}".format(
+                                                            "".join(m_p), "".join(g_p[:-1]), "".join(b_p), last_cmd)
+                                                        print(color_p)
+                                                    # format ouput
+                                                    print_table(
+                                                        result, wide=28, format_SH=True)
+                                            else:
+                                                event.app.current_buffer.insert_text(
+                                                    comm_part[len(buff_text.split('/')[-1]):])
+                                        else:
+                                            event.app.current_buffer.insert_text(
+                                                result[0][len(buff_text.split('/')[-1]):])
+                                    else:
+                                        print('>>> {}'.format(buff_text))   # dir var
+                                        print_table(ble_cp.dev.output, wide=16, autocol_tab=True, sort=False)
+                                else:
+                                    result = [
+                                        val for val in ble_cp.dev.output if val.startswith(buff_text)]
                                     if len(result) > 1:
                                         comm_part = os.path.commonprefix(result)
-                                        if comm_part == buff_text.split('/')[-1]:
+                                        if comm_part == buff_text:
                                             if shell_mode['S']:
                                                 last_cmd = event.app.current_buffer.document.text
                                                 if local_path['p'] == '':
@@ -3079,59 +3165,23 @@ def tab_press(event):
                                                 # format ouput
                                                 print_table(
                                                     result, wide=28, format_SH=True)
+                                            else:
+                                                print('>>> {}'.format(buff_text))  # globals
+                                                print_table(result, wide=16,
+                                                            autowide=True)
                                         else:
                                             event.app.current_buffer.insert_text(
-                                                comm_part[len(buff_text.split('/')[-1]):])
+                                                comm_part[len(buff_text):])
                                     else:
                                         event.app.current_buffer.insert_text(
-                                            result[0][len(buff_text.split('/')[-1]):])
-                                else:
-                                    print('>>> {}'.format(buff_text))   # dir var
-                                    print_table(ble_cp.dev.output, wide=16, autocol_tab=True, sort=False)
-                            else:
-                                result = [
-                                    val for val in ble_cp.dev.output if val.startswith(buff_text)]
-                                if len(result) > 1:
-                                    comm_part = os.path.commonprefix(result)
-                                    if comm_part == buff_text:
-                                        if shell_mode['S']:
-                                            last_cmd = event.app.current_buffer.document.text
-                                            if local_path['p'] == '':
-                                                g_p = [val[1]
-                                                       for val in prompt['p'][1:5]]
-                                                b_p = [val[1]
-                                                       for val in prompt['p'][5:]]
-                                                color_p = "\33[32;1m{}\033[0m:\u001b[34;1m{}\033[0m{}".format(
-                                                    "".join(g_p[:-1]), "".join(b_p), last_cmd)
-                                                print(color_p)
-                                            else:
-                                                m_p = [prompt['p'][0][1]]
-                                                g_p = [val[1]
-                                                       for val in prompt['p'][1:5]]
-                                                b_p = [val[1]
-                                                       for val in prompt['p'][5:]]
-                                                color_p = "\u001b[35;1m{}\033[0m\33[32;1m{}\033[0m:\u001b[34;1m{}\033[0m{}".format(
-                                                    "".join(m_p), "".join(g_p[:-1]), "".join(b_p), last_cmd)
-                                                print(color_p)
-                                            # format ouput
-                                            print_table(
-                                                result, wide=28, format_SH=True)
-                                        else:
-                                            print('>>> {}'.format(buff_text))  # globals
-                                            print_table(result, wide=16,
-                                                        autowide=True)
-                                    else:
-                                        event.app.current_buffer.insert_text(
-                                            comm_part[len(buff_text):])
-                                else:
-                                    event.app.current_buffer.insert_text(
-                                        result[0][len(buff_text):])
+                                            result[0][len(buff_text):])
 
-            except Exception as e:
-                # print(e)
-                pass
+                except Exception as e:
+                    # print(e)
+                    pass
 
-        tab_cmd_info()
+            tab_cmd_info()
+        return None
 
     async def f():
         async with in_terminal():
@@ -3449,6 +3499,7 @@ while repl:
                                    auto_suggest=ConditionalAutoSuggest(AutoSuggestFromHistory(),
                                                                        autosuggest_is_on),
                                    key_bindings=kb, style=style_p,
+                                   multiline=edit_mode['E'] or paste_flag['p'],
                                    )
             status_encryp_msg['S'] = False
             status_encryp_msg['Toggle'] = True
@@ -3509,7 +3560,7 @@ while repl:
                         ble_cp.sh_repl(inp, follow=True)
                         # if ble_cp.dev.output is not None:
                         #     print(ble_cp.dev.output)
-                    except KeyboardInterrupt:
+                    except KeyboardInterrupt:  # HERE OR IN AS_WRITE_READ_FOLLOW
                         time.sleep(0.2)
                         # ble_cp.sh_repl('\x03', silent=True,
                         #                traceback=True)  # KBI
