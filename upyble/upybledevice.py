@@ -7,6 +7,7 @@ from bleak import discover
 import time
 import ast
 from array import array
+import sys
 
 
 def ble_scan(log=False):
@@ -23,10 +24,18 @@ def ble_scan(log=False):
     loop = asyncio.get_event_loop()
     return loop.run_until_complete(run())
 
+# MACOS
+
 
 NUS = {"6E400001-B5A3-F393-E0A9-E50E24DCCA9E": "Nordic UART Service",
        "6E400003-B5A3-F393-E0A9-E50E24DCCA9E": 'TX',
        "6E400002-B5A3-F393-E0A9-E50E24DCCA9E": 'RX'}
+
+# Linux # if sys.platform linux :
+if sys.platform == 'linux':
+    NUS = {"6e400001-b5a3-f393-e0a9-e50e24dcca9e": "Nordic UART Service",
+           "6e400003-b5a3-f393-e0a9-e50e24dcca9e": 'TX',
+           "6e400002-b5a3-f393-e0a9-e50e24dcca9e": 'RX'}
 
 
 class BASE_SBLE_DEVICE:
@@ -90,7 +99,7 @@ class BASE_SBLE_DEVICE:
     # SERVICES
     def get_services(self, log=True):
         for service in self.ble_client.services:
-            if service.description == 'Unknown' and service.uuid in list(NUS.keys()):
+            if service.description == 'Unknown' or service.uuid in list(NUS.keys()):
                 is_NUS = True
                 if log:
                     print("[Service] {0}: {1}".format(
@@ -366,7 +375,7 @@ class BASE_BLE_DEVICE:
     # SERVICES
     def get_services(self, log=True):
         for service in self.ble_client.services:
-            if service.description == 'Unknown' and service.uuid in list(NUS.keys()):
+            if service.description == 'Unknown' or service.uuid in list(NUS.keys()):
                 is_NUS = True
                 if log:
                     print("[Service] {0}: {1}".format(

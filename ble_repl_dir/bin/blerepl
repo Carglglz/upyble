@@ -46,7 +46,7 @@ from prompt_toolkit import print_formatted_text
 from prompt_toolkit.shortcuts import (radiolist_dialog, message_dialog,
                                       input_dialog, yes_no_dialog)
 
-# TODO: PUT, GET --> like serial, EDIT?, C-C KBI[done]
+# TODO: PUT, GET --> like serial, EDIT?, C-C KBI[done], RESET BEFORE EXIT
 
 
 class BLE_REPL_server:

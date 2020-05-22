@@ -37,7 +37,7 @@ def see_groups():
 
 
 helparg = '''
-- check:    to check local machine Bluetooth characterisctics (MACOS only)
+- check:    to check local machine Bluetooth characterisctics
 - scan:     to scan for BLE devices see -n for max number of scans
 - tscan:    to scan for BLE devices, results is table format
 - sconf:    to scan and configure a device that matches a name -d [NAME]
@@ -84,7 +84,7 @@ parser.add_argument("-@", help=help_dv, required=False).completer = ChoicesCompl
 parser.add_argument('-n', type=int, default=3, help='number of max scans to try')
 parser.add_argument('-d', default='auto', help='device to config if available')
 parser.add_argument(
-    "-st", help='shows target ip if using config file', required=False, default=False, action='store_true')
+    "-st", help='shows target uuid if using config file', required=False, default=False, action='store_true')
 parser.add_argument(
     "-g", help='to store/read the configuration file globally, if there is no config file in working directory, \n it uses the global file',
     required=False, default=False, action='store_true')
@@ -205,6 +205,9 @@ if args.m == 'config':
 if args.m == 'check':
     if sys.platform == "darwin":
         subprocess.call(shlex.split('system_profiler SPBluetoothDataType'))
+        sys.exit()
+    elif sys.platform == 'linux':
+        subprocess.call(shlex.split('hciconfig --all'))
         sys.exit()
 # SCAN MODE
 if args.m == 'scan':
