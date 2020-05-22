@@ -46,7 +46,7 @@ from prompt_toolkit import print_formatted_text
 from prompt_toolkit.shortcuts import (radiolist_dialog, message_dialog,
                                       input_dialog, yes_no_dialog)
 
-# TODO: PUT, GET --> like serial, EDIT?, C-C KBI
+# TODO: PUT, GET --> like serial, EDIT?, C-C KBI[done]
 
 
 class BLE_REPL_server:
@@ -309,7 +309,7 @@ Custom keybindings:
 - CTRL-a : set cursor position at the beggining
 - CTRL-f : toggle autosuggest mode (Fish shell like)(use right arrow to complete)
 - CTRL-g : To active listen for device output (Timer or hardware interrupts), CTRL-c to break
-- CRTL-s , ENTER : toggle shell mode to navigate filesystem (see shell commands)
+- CRTL-s : toggle shell mode to navigate filesystem (see shell commands)
 - CTRL-k : prints the custom keybindings (this list) (+ shell commands if in shell mode)
 >>> """
 
@@ -318,7 +318,7 @@ shell_commands_info = """
      - tab to autocomplete device file / dirs names / raw micropython (repl commands)
      - shift-tab to autocomplete shell commands
      - shift-right to autocomplete local file / dirs names
-     - shift-left,ENTER to toggle local path in prompt
+     - shift-left to toggle local path in prompt
 
 * Device shell commands:
     * upysh commands:
@@ -2726,29 +2726,23 @@ def toggle_autosgst(event):
 #
 #     run_in_terminal(print_last)
 #
-#
-# @kb.add('c-t')
-# def testpress(event):
-#     "Test code command"
-#     def test_code():
-#         ble_cp.dev.output = None
-#         test_cmd = 'import test_code'
-#         print('>>> {}'.format(test_cmd))
-#         try:
-#             ble_cp.sh_repl(test_cmd, follow=True)
-#             # if ble_cp.dev.output is not None:
-#             #     print(ble_cp.dev.output)
-#         except KeyboardInterrupt:
-#             time.sleep(0.2)
-#             ble_cp.sh_repl('\x03', silent=True,
-#                             traceback=True)  # KBI
-#             time.sleep(0.2)
-#             for i in range(1):
-#                 ble_cp.sh_repl('\x0d', silent=True)
-#                 ble_cp.flush_conn()
-#             pass
-#
-#     run_in_terminal(test_code)
+
+@kb.add('c-t')
+def testpress(event):
+    "Test code command"
+    # async def run_kb():
+    #     ble_cp.dev.output = None
+    #     print('>>> import test_code')
+    #     await ble_cp.as_sh_repl('do_test(10)',
+    #                             follow=True)
+    #     return None
+    #
+    # async def f():
+    #     async with in_terminal():
+    #         await run_kb()
+    #
+    # loop = asyncio.get_event_loop()
+    # loop.create_task(f())
 #
 #
 # @kb.add('c-w')
@@ -2781,16 +2775,44 @@ def reset_cursor(event):
 
 @kb.add('c-s')
 def toggle_shell_mode(event):
-    if shell_mode['S']:
-        prompt['p'] = d_prompt
-        shell_mode['S'] = False
-    else:
-        prompt['p'] = shell_prompt['s']
-        shell_mode['S'] = True
-        # ble_cp.sh_repl('from upysh import *', no_raw_buff=True)
-        # ble_cp.sh_repl('from upysh import *', silent=True)
-        ble_cp.dev.output = None
 
+    def show_p():
+        if shell_mode['S']:
+            if local_path['p'] == '':
+                g_p = [val[1] for val in prompt['p'][1:5]]
+                b_p = [val[1] for val in prompt['p'][5:]]
+                color_p = "\33[32;1m{}\033[0m:\u001b[34;1m{}\033[0m".format(
+                    "".join(g_p[:-1]), "".join(b_p))
+                print(color_p)
+            else:
+                m_p = [prompt['p'][0][1]]
+                g_p = [val[1] for val in prompt['p'][1:5]]
+                b_p = [val[1] for val in prompt['p'][5:]]
+                color_p = "\u001b[35;1m{}\033[0m\33[32;1m{}\033[0m:\u001b[34;1m{}\033[0m".format(
+                    "".join(m_p), "".join(g_p[:-1]), "".join(b_p))
+                print(color_p)
+        else:
+            print(prompt['p'])
+
+        if shell_mode['S']:
+            prompt['p'] = d_prompt
+            shell_mode['S'] = False
+        else:
+            prompt['p'] = shell_prompt['s']
+            shell_mode['S'] = True
+            ble_cp.dev.output = None
+
+    run_in_terminal(show_p)
+
+    # if shell_mode['S']:
+    #     prompt['p'] = d_prompt
+    #     shell_mode['S'] = False
+    # else:
+    #     prompt['p'] = shell_prompt['s']
+    #     shell_mode['S'] = True
+    #     # ble_cp.sh_repl('from upysh import *', no_raw_buff=True)
+    #     # ble_cp.sh_repl('from upysh import *', silent=True)
+    #     ble_cp.dev.output = None
 
 @kb.add('c-c')
 def send_KBI(event):
@@ -2803,7 +2825,7 @@ def send_KBI(event):
                 event.app.current_buffer.reset()
             else:
                 ble_cp.dev.output = None
-                print('KeyboardInterrupt')
+                print('^C')
                 await ble_cp.as_sh_repl(ble_cp.dev._kbi,
                                         follow=True)
 
@@ -2850,7 +2872,7 @@ def paste_mode(event):
 
             def cmd_paste():
                 print(
-                    'paste mode; Ctrl-C to cancel, Ctrl-D to finish, Then ESC, ENTER to exit paste mode')
+                    'paste mode; Press ENTER to write, Ctrl-C to cancel, Ctrl-D to finish, Then ESC, ENTER to exit paste mode')
                 print("===")
                 prompt['p'] = ""
             cmd_paste()
@@ -3486,6 +3508,13 @@ def toggle_local_path(event):
 #
 
 
+def check_prompt():
+    if ble_cp.dev.cmd_finished:
+        return prompt['p']
+    else:
+        return ''
+
+
 session_p = PromptSession()
 # REPL/SHELL LOOP
 repl = True
@@ -3495,12 +3524,12 @@ while repl:
         if exit_flag['exit']:
             break
         else:
-            inp = session_p.prompt(prompt['p'],
+            inp = session_p.prompt(check_prompt,
                                    auto_suggest=ConditionalAutoSuggest(AutoSuggestFromHistory(),
                                                                        autosuggest_is_on),
                                    key_bindings=kb, style=style_p,
                                    multiline=edit_mode['E'] or paste_flag['p'],
-                                   )
+                                   refresh_interval=0.2)
             status_encryp_msg['S'] = False
             status_encryp_msg['Toggle'] = True
             if inp is not None and inp != '' and not paste_flag['p']:
@@ -3513,17 +3542,23 @@ while repl:
                     else:
                         inp, frst_cmd = map_upysh(inp)
                         if frst_cmd == 'run':
+                            ble_cp.dev.cmd_finished = False
+
+                            async def frepl():
+                                output = await ble_cp.as_sh_repl(inp, follow=True,
+                                                                 rtn=True,
+                                                                 rtn_resp=True)
+                                ble_cp.dev.cmd_finished = True
+                                # async with in_terminal():
+                                #     output = await ble_cp.as_sh_repl(inp, follow=True,
+                                #                                      rtn=True,
+                                #                                    rtn_resp=True)
+                                return None
+
                             try:
-                                ble_cp.sh_repl(inp, follow=True)
-                                # if ble_cp.dev.output is not None:
-                                #     print(ble_cp.dev.output)
-                            except KeyboardInterrupt:
-                                time.sleep(0.2)
-                                ble_cp.dev.kbi()  # KBI
-                                time.sleep(0.2)
-                                for i in range(1):
-                                    ble_cp.sh_repl('\x0d', silent=True)
-                                    ble_cp.flush_conn()
+                                loop = asyncio.get_event_loop()
+                                asyncio.ensure_future(frepl(), loop=loop)
+                            finally:
                                 pass
 
                         else:
@@ -3555,21 +3590,47 @@ while repl:
                                 shell_prompt['s'] = shell_message
                                 prompt['p'] = shell_prompt['s']
                 else:  # REPL
+                    ble_cp.dev.cmd_finished = False
+
+                    async def frepl():
+                        output = await ble_cp.as_sh_repl(inp, follow=True,
+                                                         rtn=True,
+                                                         rtn_resp=True)
+                        ble_cp.dev.cmd_finished = True
+                        # async with in_terminal():
+                        #     output = await ble_cp.as_sh_repl(inp, follow=True,
+                        #                                      rtn=True,
+                        #                                    rtn_resp=True)
+                        return None
+
                     try:
+                        loop = asyncio.get_event_loop()
+                        asyncio.ensure_future(frepl(), loop=loop)
+                    finally:
+                        pass
+
+
+
+
                         # ble_cp.sh_repl(inp, follow=True)
-                        ble_cp.sh_repl(inp, follow=True)
+                        # ble_cp.sh_repl(inp, follow=True, kb=True)
                         # if ble_cp.dev.output is not None:
                         #     print(ble_cp.dev.output)
-                    except KeyboardInterrupt:  # HERE OR IN AS_WRITE_READ_FOLLOW
-                        time.sleep(0.2)
+                        # time.sleep(0.2)
                         # ble_cp.sh_repl('\x03', silent=True,
                         #                traceback=True)  # KBI
-                        ble_cp.dev.kbi(silent=False)
-                        time.sleep(0.2)
-                        for i in range(1):
-                            ble_cp.sh_repl('\x0d', silent=True)
-                            ble_cp.flush_conn()
-                        pass
+                        # print('Catched here 2')
+                        # print('BUFF: {}'.format(ble_cp.dev.raw_buff))
+                        # print('IS NOTIFYING: {}'.format(ble_cp.dev.is_notifying))
+                        # ble_cp.dev.repl_kbi()
+                        # print('IS NOTIFYING: {}'.format(ble_cp.dev.is_notifying))
+                        # time.sleep(0.2)
+                        # for i in range(1):
+                        #     ble_cp.sh_repl('\x0d', silent=True)
+                        #     ble_cp.flush_conn()
+                    pass
+
+
                 if inp != '':  # PASTE BUFFER
                     pass
                     # paste_buffer['B'].append(inp)

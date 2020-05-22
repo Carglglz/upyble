@@ -7,7 +7,6 @@ from bleak import discover
 import time
 import ast
 from array import array
-import socket
 
 
 def ble_scan(log=False):
@@ -96,13 +95,15 @@ class BASE_SBLE_DEVICE:
                 if log:
                     print("[Service] {0}: {1}".format(
                         service.uuid, NUS[service.uuid]))
-                self.services[NUS[service.uuid]] = {'UUID': service.uuid, 'CHARS': {}}
+                self.services[NUS[service.uuid]] = {
+                    'UUID': service.uuid, 'CHARS': {}}
             else:
                 is_NUS = False
                 if log:
                     print("[Service] {0}: {1}".format(
                         service.uuid, service.description))
-                self.services[service.description] = {'UUID': service.uuid, 'CHARS': {}}
+                self.services[service.description] = {
+                    'UUID': service.uuid, 'CHARS': {}}
 
             for char in service.characteristics:
                 if is_NUS:
@@ -144,7 +145,8 @@ class BASE_SBLE_DEVICE:
     def read_service_raw(self, key=None, uuid=None):
         if key is not None:
             if key in list(self.readables.keys()):
-                data = self.loop.run_until_complete(self.as_read_service(self.readables[key]))
+                data = self.loop.run_until_complete(
+                    self.as_read_service(self.readables[key]))
                 return data
             else:
                 print('Service not readable')
@@ -152,7 +154,8 @@ class BASE_SBLE_DEVICE:
         else:
             if uuid is not None:
                 if uuid in list(self.readables.values()):
-                    data = self.loop.run_until_complete(self.as_read_service(uuid))
+                    data = self.loop.run_until_complete(
+                        self.as_read_service(uuid))
                     return data
                 else:
                     print('Service not readable')
@@ -169,7 +172,8 @@ class BASE_SBLE_DEVICE:
     def write_service_raw(self, key=None, uuid=None, data=None):
         if key is not None:
             if key in list(self.writeables.keys()):
-                data = self.loop.run_until_complete(self.as_write_service(self.writeables[key], bytes(data)))
+                data = self.loop.run_until_complete(
+                    self.as_write_service(self.writeables[key], bytes(data)))
                 return data
             else:
                 print('Service not writeable')
@@ -177,7 +181,8 @@ class BASE_SBLE_DEVICE:
         else:
             if uuid is not None:
                 if uuid in list(self.writeables.values()):
-                    data = self.loop.run_until_complete(self.as_write_service(uuid, bytes(data)))
+                    data = self.loop.run_until_complete(
+                        self.as_write_service(uuid, bytes(data)))
                     return data
                 else:
                     print('Service not writeable')
@@ -226,9 +231,11 @@ class BASE_SBLE_DEVICE:
         if self._traceback in self.buff:
             long_string = True
         if long_string:
-            self.response = self.buff.replace(b'\r', b'').replace(b'\r\n>>> ', b'').replace(b'>>> ', b'').decode('utf-8', 'ignore')
+            self.response = self.buff.replace(b'\r', b'').replace(
+                b'\r\n>>> ', b'').replace(b'>>> ', b'').decode('utf-8', 'ignore')
         else:
-            self.response = self.buff.replace(b'\r\n', b'').replace(b'\r\n>>> ', b'').replace(b'>>> ', b'').decode('utf-8', 'ignore')
+            self.response = self.buff.replace(b'\r\n', b'').replace(
+                b'\r\n>>> ', b'').replace(b'>>> ', b'').decode('utf-8', 'ignore')
         if not silent:
             if self.response != '\n' and self.response != '':
                 print(self.response)
@@ -301,6 +308,8 @@ class BASE_BLE_DEVICE:
         self.loop = asyncio.get_event_loop()
         self.raw_buff_queue = asyncio.Queue()
         self.kb_cmd = None
+        self.is_notifying = False
+        self.cmd_finished = True
         #
         self.bytes_sent = 0
         self.buff = b''
@@ -362,13 +371,15 @@ class BASE_BLE_DEVICE:
                 if log:
                     print("[Service] {0}: {1}".format(
                         service.uuid, NUS[service.uuid]))
-                self.services[NUS[service.uuid]] = {'UUID': service.uuid, 'CHARS': {}}
+                self.services[NUS[service.uuid]] = {
+                    'UUID': service.uuid, 'CHARS': {}}
             else:
                 is_NUS = False
                 if log:
                     print("[Service] {0}: {1}".format(
                         service.uuid, service.description))
-                self.services[service.description] = {'UUID': service.uuid, 'CHARS': {}}
+                self.services[service.description] = {
+                    'UUID': service.uuid, 'CHARS': {}}
 
             for char in service.characteristics:
                 if is_NUS:
@@ -410,7 +421,8 @@ class BASE_BLE_DEVICE:
     def read_service_raw(self, key=None, uuid=None):
         if key is not None:
             if key in list(self.readables.keys()):
-                data = self.loop.run_until_complete(self.as_read_service(self.readables[key]))
+                data = self.loop.run_until_complete(
+                    self.as_read_service(self.readables[key]))
                 return data
             else:
                 print('Service not readable')
@@ -418,7 +430,8 @@ class BASE_BLE_DEVICE:
         else:
             if uuid is not None:
                 if uuid in list(self.readables.values()):
-                    data = self.loop.run_until_complete(self.as_read_service(uuid))
+                    data = self.loop.run_until_complete(
+                        self.as_read_service(uuid))
                     return data
                 else:
                     print('Service not readable')
@@ -435,7 +448,8 @@ class BASE_BLE_DEVICE:
     def write_service_raw(self, key=None, uuid=None, data=None):
         if key is not None:
             if key in list(self.writeables.keys()):
-                data = self.loop.run_until_complete(self.as_write_service(self.writeables[key], bytes(data)))
+                data = self.loop.run_until_complete(
+                    self.as_write_service(self.writeables[key], bytes(data)))
                 return data
             else:
                 print('Service not writeable')
@@ -443,7 +457,8 @@ class BASE_BLE_DEVICE:
         else:
             if uuid is not None:
                 if uuid in list(self.writeables.values()):
-                    data = self.loop.run_until_complete(self.as_write_service(uuid, bytes(data)))
+                    data = self.loop.run_until_complete(
+                        self.as_write_service(uuid, bytes(data)))
                     return data
                 else:
                     print('Service not writeable')
@@ -452,26 +467,32 @@ class BASE_BLE_DEVICE:
         self.raw_buff += data
 
     def read_callback_follow(self, sender, data):
-        if not self._cmdfiltered:
-            cmd_filt = bytes(self._cmdstr + '\r\n', 'utf-8')
-            data = b'' + data
-            data = data.replace(cmd_filt, b'', 1)
-            # data = data.replace(b'\r\n>>> ', b'')
-            self._cmdfiltered = True
-        else:
-            try:
+        try:
+            if not self._cmdfiltered:
+                cmd_filt = bytes(self._cmdstr + '\r\n', 'utf-8')
                 data = b'' + data
+                data = data.replace(cmd_filt, b'', 1)
                 # data = data.replace(b'\r\n>>> ', b'')
-            except Exception as e:
-                pass
-        self.raw_buff += data
-        if self.prompt in data:
-            data = data.replace(b'\r', b'').replace(b'\r\n>>> ', b'').replace(b'>>> ', b'').decode('utf-8', 'ignore')
-            if data != '':
+                self._cmdfiltered = True
+            else:
+                try:
+                    data = b'' + data
+                    # data = data.replace(b'\r\n>>> ', b'')
+                except Exception as e:
+                    pass
+            self.raw_buff += data
+            if self.prompt in data:
+                data = data.replace(b'\r', b'').replace(b'\r\n>>> ', b'').replace(
+                    b'>>> ', b'').decode('utf-8', 'ignore')
+                if data != '':
+                    print(data, end='')
+            else:
+                data = data.replace(b'\r', b'').replace(b'\r\n>>> ', b'').replace(
+                    b'>>> ', b'').decode('utf-8', 'ignore')
                 print(data, end='')
-        else:
-            data = data.replace(b'\r', b'').replace(b'\r\n>>> ', b'').replace(b'>>> ', b'').decode('utf-8', 'ignore')
-            print(data, end='')
+        except KeyboardInterrupt:
+            print('CALLBACK_KBI')
+            pass
         #
 
     async def as_write_read_waitp(self, data, rtn_buff=False):
@@ -489,19 +510,30 @@ class BASE_BLE_DEVICE:
             return self.raw_buff
 
     async def as_write_read_follow(self, data, rtn_buff=False):
-        await self.ble_client.start_notify(self.readables['TX'], self.read_callback_follow)
+        if not self.is_notifying:
+            try:
+                await self.ble_client.start_notify(self.readables['TX'], self.read_callback_follow)
+                self.is_notifying = True
+            except Exception as e:
+                pass
         if len(data) > 100:
             for i in range(0, len(data), 100):
                 await self.ble_client.write_gatt_char(self.writeables['RX'], data[i:i+100])
         else:
             await self.ble_client.write_gatt_char(self.writeables['RX'], data)
         while self.prompt not in self.raw_buff:
-            # try:
-            await asyncio.sleep(0.01, loop=self.loop)
-            # except KeyboardInterrupt:
-            # data = bytes(self._kbi, 'utf-8')
-            # await self.ble_client.write_gatt_char(self.writeables['RX'], data)
-        await self.ble_client.stop_notify(self.readables['TX'])
+            try:
+                await asyncio.sleep(0.01, loop=self.loop)
+            except KeyboardInterrupt:
+                print('Catch here1')
+                data = bytes(self._kbi, 'utf-8')
+                await self.ble_client.write_gatt_char(self.writeables['RX'], data)
+        if self.is_notifying:
+            try:
+                await self.ble_client.stop_notify(self.readables['TX'])
+                self.is_notifying = False
+            except Exception as e:
+                pass
         self._cmdfiltered = False
         if rtn_buff:
             return self.raw_buff
@@ -513,22 +545,27 @@ class BASE_BLE_DEVICE:
         if not follow:
             if not kb:
                 try:
-                    self.loop.run_until_complete(self.as_write_read_waitp(data))
+                    self.loop.run_until_complete(
+                        self.as_write_read_waitp(data))
                 except Exception as e:
                     print(e)
             else:
-                asyncio.ensure_future(self.as_write_read_waitp(data), loop=self.loop)
+                asyncio.ensure_future(
+                    self.as_write_read_waitp(data), loop=self.loop)
                 # wait here until there is raw_buff
 
         else:
             if not kb:
                 try:
-                    self.loop.run_until_complete(self.as_write_read_follow(data))
+                    self.loop.run_until_complete(
+                        self.as_write_read_follow(data))
                 except Exception as e:
+                    print('Catch here0')
                     print(e)
             else:
 
-                asyncio.ensure_future(self.as_write_read_follow(data, rtn_buff=True), loop=self.loop)
+                asyncio.ensure_future(self.as_write_read_follow(
+                    data, rtn_buff=True), loop=self.loop)
 
     def send_recv_cmd(self, cmd, follow=False, kb=False):
         data = bytes(cmd, 'utf-8')
@@ -579,9 +616,11 @@ class BASE_BLE_DEVICE:
         if self._traceback in self.buff:
             long_string = True
         if long_string:
-            self.response = self.buff.replace(b'\r', b'').replace(b'\r\n>>> ', b'').replace(b'>>> ', b'').decode('utf-8', 'ignore')
+            self.response = self.buff.replace(b'\r', b'').replace(
+                b'\r\n>>> ', b'').replace(b'>>> ', b'').decode('utf-8', 'ignore')
         else:
-            self.response = self.buff.replace(b'\r\n', b'').replace(b'\r\n>>> ', b'').replace(b'>>> ', b'').decode('utf-8', 'ignore')
+            self.response = self.buff.replace(b'\r\n', b'').replace(
+                b'\r\n>>> ', b'').replace(b'>>> ', b'').decode('utf-8', 'ignore')
         if not silent:
             if self.response != '\n' and self.response != '':
                 print(self.response)
@@ -598,12 +637,13 @@ class BASE_BLE_DEVICE:
             return self.output
 
     async def as_wr_cmd(self, cmd, silent=False, rtn=True, rtn_resp=False,
-               long_string=False, follow=False, kb=False):
+                        long_string=False, follow=False, kb=False):
         self.output = None
         self.response = ''
         self.raw_buff = b''
         self.buff = b''
         self._cmdstr = cmd
+        self.cmd_finished = False
         # self.flush()
         data = bytes(cmd, 'utf-8')
         n_bytes = len(data)
@@ -626,9 +666,11 @@ class BASE_BLE_DEVICE:
         if self._traceback in self.buff:
             long_string = True
         if long_string:
-            self.response = self.buff.replace(b'\r', b'').replace(b'\r\n>>> ', b'').replace(b'>>> ', b'').decode('utf-8', 'ignore')
+            self.response = self.buff.replace(b'\r', b'').replace(
+                b'\r\n>>> ', b'').replace(b'>>> ', b'').decode('utf-8', 'ignore')
         else:
-            self.response = self.buff.replace(b'\r\n', b'').replace(b'\r\n>>> ', b'').replace(b'>>> ', b'').decode('utf-8', 'ignore')
+            self.response = self.buff.replace(b'\r\n', b'').replace(
+                b'\r\n>>> ', b'').replace(b'>>> ', b'').decode('utf-8', 'ignore')
         if not silent:
             if self.response != '\n' and self.response != '':
                 print(self.response)
@@ -641,6 +683,7 @@ class BASE_BLE_DEVICE:
             if self.output is None:
                 if self.response != '' and self.response != '\n':
                     self.output = self.response
+        self.cmd_finished = True
         if rtn_resp:
             return self.output
 
@@ -654,6 +697,13 @@ class BASE_BLE_DEVICE:
             pipe(traceback, std='stderr')
         else:
             self.wr_cmd(self._kbi, silent=silent)
+
+    async def as_kbi(self):
+        for i in range(1):
+            print('This is buff: {}'.format(self.raw_buff))
+            await asyncio.sleep(1, loop=self.loop)
+            data = bytes(self._kbi + '\r', 'utf-8')
+            await self.ble_client.write_gatt_char(self.writeables['RX'], data)
 
     def banner(self, pipe=None, kb=False, follow=False):
         self.wr_cmd(self._banner, silent=True, long_string=True,
@@ -683,54 +733,3 @@ class BASE_BLE_DEVICE:
                     except Exception as e:
                         pass
             pass
-
-    async def as_repl(self):
-        while True:
-            try:
-                try:
-                    await self.ble_client.start_notify(self.readables['TX'], self.read_callback_follow)
-                except ValueError:
-                    pass
-                self.raw_buff = b''
-                cmd = input(">>> ")
-                if cmd == 'dokbi':
-                    raise KeyboardInterrupt
-                if len(cmd.split()) != 0:
-                    self._cmdstr = cmd
-                    data = bytes(cmd, 'utf-8') + b'\r'
-                    if len(data) > 100:
-                        for i in range(0, len(data), 100):
-                            await self.ble_client.write_gatt_char(self.writeables['RX'], data[i:i+100])
-                    else:
-                        await self.ble_client.write_gatt_char(self.writeables['RX'], data)
-                    while self.prompt not in self.raw_buff:
-                        await asyncio.sleep(0.01, loop=self.loop)
-                    try:
-                        await self.ble_client.stop_notify(self.readables['TX'])
-                    except ValueError:
-                        pass
-                    self._cmdfiltered = False
-            except KeyboardInterrupt:
-                print("^C")
-                print("KeyboardInterrupt")
-                self.raw_buff = b''
-                try:
-                    await self.ble_client.start_notify(self.readables['TX'], self.read_callback_follow)
-                except ValueError:
-                    pass
-                data = bytes(self._kbi, 'utf-8')
-                await self.ble_client.write_gatt_char(self.writeables['RX'], data)
-                while self.prompt not in self.raw_buff:
-                    await asyncio.sleep(0.01, loop=self.loop)
-                try:
-                    await self.ble_client.stop_notify(self.readables['TX'])
-                except ValueError:
-                    pass
-                self._cmdfiltered = False
-
-            except EOFError:
-                print('repl closed')
-                break
-
-    def start_repl(self):
-        self.loop.run_until_complete(self.as_repl())
