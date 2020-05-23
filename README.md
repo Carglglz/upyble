@@ -2,6 +2,7 @@
 
 # uPyble
 
+[![PyPI version](https://badge.fury.io/py/upyble.svg)](https://badge.fury.io/py/upyble)[![PyPI license](https://img.shields.io/pypi/l/ansicolortags.svg)](https://pypi.python.org/pypi/ansicolortags/)
 
 ### Command line tool for Bluetooth Low Energy MicroPython devices
 
