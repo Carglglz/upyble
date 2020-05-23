@@ -1,4 +1,4 @@
-<img align="right" width="100" height="100" src="https://raw.githubusercontent.com/Carglglz/upydev/master/uPyblelogo.png">
+<img align="right" width="200" height="100" src="https://raw.githubusercontent.com/Carglglz/upyble/master/uPyblelogo.png">
 
 # uPyble
 
