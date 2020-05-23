@@ -149,10 +149,10 @@ def ble_repl(uuid, usr=None):
 
     if usr is not None:
 
-        blerepl_cmd_str = 'blerepl -t {} -dev {}'.format(uuid, usr)
+        blerepl_cmd_str = 'blerepl -t {} -dev {} -r'.format(uuid, usr)
     else:
 
-        blerepl_cmd_str = 'blerepl -t {} '.format(uuid)
+        blerepl_cmd_str = 'blerepl -t {} -r'.format(uuid)
     blerepl_cmd = shlex.split(blerepl_cmd_str)
 
     old_action = signal.signal(signal.SIGINT, signal.SIG_IGN)

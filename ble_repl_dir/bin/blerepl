@@ -46,7 +46,7 @@ from prompt_toolkit import print_formatted_text
 from prompt_toolkit.shortcuts import (radiolist_dialog, message_dialog,
                                       input_dialog, yes_no_dialog)
 
-# TODO: PUT, GET --> like serial, EDIT?, C-C KBI[done], RESET BEFORE EXIT
+# TODO: PUT, GET --> like serial, EDIT?
 
 
 class BLE_REPL_server:
@@ -255,7 +255,7 @@ custom_sh_cmd_kw = ['df', 'datetime', 'ifconfig', 'ifconfig_t', 'netscan',
                     'batl', 'fw', 'flash', 'du', 'ldu', 'd_sync', 'upipl',
                     'uping', 'lping', 'pkg_info', 'update_upyutils',
                     'timeit', 'i2c', 'dump_mem', 'git', 'emacs', 'batstyle',
-                    'upy-config', 'tig', 'jupyterc']
+                    'upy-config', 'tig', 'get_services']
 CRED = '\033[91;1m'
 CGREEN = '\33[32;1m'
 CEND = '\033[0m'
@@ -1579,20 +1579,9 @@ def custom_sh_cmd(cmd_inp):
                                                                                   ifconfig_local['broadcast'],
                                                                                   ssid,
                                                                                   rssi))
-#     # if cmd_inp == 'lsof':
-#     #     nm_scan = nmap.PortScanner()
-#     #     print('Scanning TCP ports...')
-#     #     nm_scan.scan(hosts=args.t, arguments='-p 1-10000')
-#     #     result = nm_scan[args.t]['tcp']
-#     #     ports = list(result.keys())
-#     #     print('Found {} open port/s'.format(len(ports)))
-#     #     print('{0:8}  {1:^15}  {2:^15} '.format(
-#     #         'PORT', 'STATE', 'SERVICE'))
-#     #     for port in ports:
-#     #         print('{0:<8}  {1:^15}  {2:^15} '.format(port,
-#     #                                                      result[port]['state'],
-#     #                                                      result[port]['name']))
-#
+    if cmd_inp == 'get_services':
+        ble_cp.dev.get_services()
+
     if cmd_inp.split(' ')[0] == 'reload':
         try:
             module = cmd_inp.split(' ')[1].split('.py')[0]
@@ -2525,7 +2514,8 @@ def custom_sh_cmd(cmd_inp):
                     print('Done!')
             else:
                 print('Rebooting device...')
-                # ble_cp.send_message("\x04")
+                ble_cp.dev.reset()
+                time.sleep(1)
                 print('Done!')
         else:
             # ble_cp.sh_repl("ssl_client.switch_wrepl()")
@@ -2547,22 +2537,32 @@ def autosuggest_is_on():
 @kb.add('c-x')
 def exitpress(event):
     " Exit BLE SHELL-REPL terminal "
-    if shell_mode['S']:
-        print('\nclosing...')
-    else:
-        print('\n>>> closing...')
-    if reset_flag['R']:
-        pass
-        # print('Rebooting device...')
-        # ble_cp.send_message("\x04")
-        # print('Done!')
-    else:
-        # ble_cp.sh_repl("ssl_client.switch_wrepl()")
-        time.sleep(0.5)
-    # ble_cp.dev.disconnect()
-    exit_flag['exit'] = True
-    event.app.exit()
-#
+    async def run_kb():
+        if shell_mode['S']:
+            print('\nclosing...')
+        else:
+            print('\n>>> closing...')
+        if reset_flag['R']:
+            print('Rebooting device...')
+            await ble_cp.dev.as_reset()
+            print('Done!')
+        else:
+            pass
+            # ble_cp.sh_repl("ssl_client.switch_wrepl()")
+            # time.sleep(0.5)
+        # ble_cp.dev.disconnect()
+        await asyncio.sleep(1, loop=ble_cp.dev.loop)
+        exit_flag['exit'] = True
+        event.app.exit()
+        return None
+
+    async def f():
+        async with in_terminal():
+            await run_kb()
+
+    loop = asyncio.get_event_loop()
+    loop.create_task(f())
+
 
 
 @kb.add('c-b')
@@ -2804,15 +2804,6 @@ def toggle_shell_mode(event):
 
     run_in_terminal(show_p)
 
-    # if shell_mode['S']:
-    #     prompt['p'] = d_prompt
-    #     shell_mode['S'] = False
-    # else:
-    #     prompt['p'] = shell_prompt['s']
-    #     shell_mode['S'] = True
-    #     # ble_cp.sh_repl('from upysh import *', no_raw_buff=True)
-    #     # ble_cp.sh_repl('from upysh import *', silent=True)
-    #     ble_cp.dev.output = None
 
 @kb.add('c-c')
 def send_KBI(event):

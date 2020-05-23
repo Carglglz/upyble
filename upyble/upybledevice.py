@@ -458,7 +458,7 @@ class BASE_BLE_DEVICE:
         if key is not None:
             if key in list(self.writeables.keys()):
                 data = self.loop.run_until_complete(
-                    self.as_write_service(self.writeables[key], bytes(data)))
+                    self.as_write_service(self.writeables[key], bytes(data, 'utf-8')))
                 return data
             else:
                 print('Service not writeable')
@@ -722,6 +722,17 @@ class BASE_BLE_DEVICE:
         else:
             if pipe:
                 pipe(self.response.replace('\n\n', '\n'))
+
+    def reset(self, silent=True):
+        if not silent:
+            print('MPY: soft reboot')
+        self.write_service_raw(key='RX', data=self._reset)
+
+    async def as_reset(self, silent=True):
+        if not silent:
+            print('MPY: soft reboot')
+        await self.as_write_service(self.writeables['RX'], bytes(self._reset, 'utf-8'))
+        return None
 
     def get_output(self):
         try:

@@ -15,7 +15,11 @@
 * Command line wireless communication/control of MicroPython devices.
 * Custom commands to automate communication/control
 * Command line autocompletion
-* Terminal BLE SHELL-REPL
+* Terminal BLE SHELL-REPL :small_orange_diamond::small_red_triangle:
+
+ :large_orange_diamond: (REPL works,  but some SHELL commands are still under development)
+
+:small_red_triangle: ​There is a limit in the amount of output it can produce, so long lists or `cat` a big file will crash the BLE SHELL-REPL and possibly the device, which makes a reset almost inevitable.
 
 ------
 
@@ -102,7 +106,6 @@ This means that if the first argument is not a Mode keyword it assumes it is a '
 
 - **`upyble ble@[DEVICE]`**: to access brepl in a 'ssh' style command if a device is stored in a global group called `UPYBLE_G` (this needs to be created first doing e.g. `$ upyble make_group -g -f UPYBLE_G -devs foo_device UUID`) The device can be accessed as `$ upyble ble@foo_device` or redirect any command as e.g. `$ upyble get_services -@foo_device`.
 
-
 ____
 
 #### SEE WHAT'S GOING ON UNDER THE HOOD:
@@ -112,7 +115,6 @@ _ℹ️ Host and the device must be connected._
   In a terminal window open a 'serial repl' with `upydev srepl --port [USBPORT]` command
 
   In another window use upyble BLE SHELL-REPL normally. Now in the terminal window with the serial repl you can see which commands are sent.
-
 
 ____
 
