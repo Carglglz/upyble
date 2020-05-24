@@ -424,6 +424,20 @@ class BASE_BLE_DEVICE:
                             )
                         )
 
+    # WRITE/READ SERVICES
+
+    def fmt_data(self, data, CR=True):
+        if sys.platform == 'linux':
+            if CR:
+                return bytearray(data+'\r', 'utf-8')
+            else:
+                return bytearray(data, 'utf-8')
+        else:
+            if CR:
+                return bytes(data+'\r', 'utf-8')
+            else:
+                return bytes(data, 'utf-8')
+
     async def as_read_service(self, uuid):
         return bytes(await self.ble_client.read_gatt_char(uuid))
 
@@ -458,7 +472,7 @@ class BASE_BLE_DEVICE:
         if key is not None:
             if key in list(self.writeables.keys()):
                 data = self.loop.run_until_complete(
-                    self.as_write_service(self.writeables[key], bytes(data, 'utf-8')))
+                    self.as_write_service(self.writeables[key], self.fmt_data(data, CR=False))) # make fmt_data
                 return data
             else:
                 print('Service not writeable')
@@ -467,7 +481,7 @@ class BASE_BLE_DEVICE:
             if uuid is not None:
                 if uuid in list(self.writeables.values()):
                     data = self.loop.run_until_complete(
-                        self.as_write_service(uuid, bytes(data)))
+                        self.as_write_service(uuid, self.fmt_data(data, CR=False))) # make fmt_data
                     return data
                 else:
                     print('Service not writeable')
@@ -577,13 +591,13 @@ class BASE_BLE_DEVICE:
                     data, rtn_buff=True), loop=self.loop)
 
     def send_recv_cmd(self, cmd, follow=False, kb=False):
-        data = bytes(cmd, 'utf-8')
+        data = self.fmt_data(cmd)  # make fmt_data
         n_bytes = len(data)
         self.write_read(data=data, follow=follow, kb=kb)
         return n_bytes
 
     def write(self, cmd):
-        data = bytes(cmd, 'utf-8')
+        data = self.fmt_data(cmd, CR=False)  # make fmt_data
         n_bytes = len(data)
         self.write_service_raw(key='RX', data=data)
         return n_bytes
@@ -609,7 +623,7 @@ class BASE_BLE_DEVICE:
         self.buff = b''
         self._cmdstr = cmd
         # self.flush()
-        self.bytes_sent = self.send_recv_cmd(cmd+'\r', follow=follow, kb=kb)
+        self.bytes_sent = self.send_recv_cmd(cmd, follow=follow, kb=kb) # make fmt_datas
         # time.sleep(0.1)
         # self.buff = self.read_all()[self.bytes_sent:]
         self.buff = self.read_all()
@@ -654,15 +668,15 @@ class BASE_BLE_DEVICE:
         self._cmdstr = cmd
         self.cmd_finished = False
         # self.flush()
-        data = bytes(cmd, 'utf-8')
+        data = self.fmt_data(cmd) # make fmt_data
         n_bytes = len(data)
         self.bytes_sent = n_bytes
         # time.sleep(0.1)
         # self.buff = self.read_all()[self.bytes_sent:]
         if follow:
-            self.buff = await self.as_write_read_follow(data + b'\r', rtn_buff=True)
+            self.buff = await self.as_write_read_follow(data, rtn_buff=True)
         else:
-            self.buff = await self.as_write_read_waitp(data + b'\r', rtn_buff=True)
+            self.buff = await self.as_write_read_waitp(data, rtn_buff=True)
         if self.buff == b'':
             # time.sleep(0.1)
             self.buff = self.read_all()

@@ -39,7 +39,7 @@ def see_groups():
 helparg = '''
 - check:    to check local machine Bluetooth characterisctics
 - scan:     to scan for BLE devices see -n for max number of scans
-- tscan:    to scan for BLE devices, results is table format
+- tscan:    to scan for BLE devices, results with table format
 - sconf:    to scan and configure a device that matches a name -d [NAME]
 - config:   to configure a device use -t to indicate UUID of the device
 - get_services: to get services of a device
@@ -74,7 +74,7 @@ parser = argparse.ArgumentParser(prog='upyble',
                                  description='Command line tool for Bluetooth Low Energy MicroPython devices',
                                  formatter_class=argparse.RawTextHelpFormatter,
                                  usage=usag)
-parser.version = '0.0.2'
+parser.version = '0.0.3'
 parser.add_argument(
     "m", metavar='Mode', help=helparg).completer = ChoicesCompleter(keywords_mode)
 parser.add_argument('-v', action='version')

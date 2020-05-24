@@ -16,11 +16,11 @@
 * Command line wireless communication/control of MicroPython devices.
 * Custom commands to automate communication/control
 * Command line autocompletion
-* Terminal BLE SHELL-REPL :small_orange_diamond::small_red_triangle:
+* Terminal BLE SHELL-REPL 🔸🔺
 
- :large_orange_diamond: (REPL works,  but some SHELL commands are still under development)
+ 🔸 (REPL works,  but some SHELL commands are still under development)
 
-:small_red_triangle: ​There is a limit in the amount of output it can produce, so long lists or `cat` a big file will crash the BLE SHELL-REPL and possibly the device, which makes a reset almost inevitable.
+🔺 There is a limit in the amount of output it can produce, so long lists or `cat` a big file will crash the BLE SHELL-REPL and possibly the device, which makes a reset almost inevitable.
 
 ------
 
@@ -95,7 +95,7 @@ This means that if the first argument is not a Mode keyword it assumes it is a '
 
 - **`upyble scan`**: to scan for BLE devices (*see `-n` for max number of scans)*
 
-- **`upyble tscan`**: to scan for BLE devices, results is table format
+- **`upyble tscan`**: to scan for BLE devices, results with table format
 
 - **`upyble sconf`**: to scan and configure a device that matches a name `-d [NAME]`
 

@@ -13,7 +13,7 @@ def readme():
 
 
 setup(name='upyble',
-      version='0.0.2',
+      version='0.0.3',
       description='Command line tool for Bluetooth Low Energy MicroPython devices',
       long_description=readme(),  # readme()
       long_description_content_type='text/markdown',
