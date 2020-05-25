@@ -20,7 +20,7 @@ _ADV_APPEARANCE_GENERIC_COMPUTER = const(128)
 
 
 class BLEUART:
-    def __init__(self, ble, name='mpy-uart', rxbuf=100):
+    def __init__(self, ble, name='mpy-uart', rxbuf=512):
         self._ble = ble
         self._ble.active(True)
         self._ble.irq(handler=self._irq)

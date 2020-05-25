@@ -300,7 +300,7 @@ class BASE_SBLE_DEVICE:
 
 
 class BASE_BLE_DEVICE:
-    def __init__(self, scan_dev, init=False, name=None):
+    def __init__(self, scan_dev, init=False, name=None, lenbuff=100):
         # BLE
         self.ble_client = None
         if hasattr(scan_dev, 'address'):
@@ -319,6 +319,7 @@ class BASE_BLE_DEVICE:
         self.kb_cmd = None
         self.is_notifying = False
         self.cmd_finished = True
+        self.len_buffer = lenbuff
         #
         self.bytes_sent = 0
         self.buff = b''
@@ -520,9 +521,9 @@ class BASE_BLE_DEVICE:
 
     async def as_write_read_waitp(self, data, rtn_buff=False):
         await self.ble_client.start_notify(self.readables['TX'], self.read_callback)
-        if len(data) > 100:
-            for i in range(0, len(data), 100):
-                await self.ble_client.write_gatt_char(self.writeables['RX'], data[i:i+100])
+        if len(data) > self.len_buffer:
+            for i in range(0, len(data), self.len_buffer):
+                await self.ble_client.write_gatt_char(self.writeables['RX'], data[i:i+self.len_buffer])
 
         else:
             await self.ble_client.write_gatt_char(self.writeables['RX'], data)
@@ -539,9 +540,9 @@ class BASE_BLE_DEVICE:
                 self.is_notifying = True
             except Exception as e:
                 pass
-        if len(data) > 100:
-            for i in range(0, len(data), 100):
-                await self.ble_client.write_gatt_char(self.writeables['RX'], data[i:i+100])
+        if len(data) > self.len_buffer:
+            for i in range(0, len(data), self.len_buffer):
+                await self.ble_client.write_gatt_char(self.writeables['RX'], data[i:i+self.len_buffer])
         else:
             await self.ble_client.write_gatt_char(self.writeables['RX'], data)
         while self.prompt not in self.raw_buff:

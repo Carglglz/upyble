@@ -174,28 +174,30 @@ class BLE_TOOL:
         cnt = 0
         t_start = time.time()
         # def_chunk = chunk
-        self.sh_srepl.sh_repl("os.stat('{}')[6]".format(src))
+        self.ble_cp.sh_repl("os.stat('{}')[6]".format(src), silent=True)
         self.ble_cp.dev.get_output()
         sz = self.ble_cp.dev.output
         print("{}  [{:.2f} KB]".format(src, sz / 1024))
         self.ble_cp.flush_conn()
         # self.start_SOC()
-        self.ble_cp.sh_repl("f=open('%s','rb');r=f.read" % src)
+        self.ble_cp.sh_repl("f=open('%s','rb');r=f.read" % src, silent=True)
         with open(src, 'wb') as f:
             pass
         with open(src, 'ab') as f:
             while True:
                 data = b''
-                self.ble_cp.sh_repl("print(r(%u))" % chunk_size)
+                self.ble_cp.sh_repl("print(r(%u))" % chunk_size,
+                                    rtn=True, silent=True)
                 if self.ble_cp.buff != b'':
-                    msg_b = self.ble_cp.buff.split(b'\n')[1:]
-                    try:
-                        msg_b[-1] = msg_b[-1].replace(b'>>> ', b'')
-                    except Exception as e:
-                        pass
-                    self.ble_cp.output = b'\n'.join([m for m in msg_b if m != b''])
+                    pass
+                    # msg_b = self.ble_cp.buff.split(b'\n')[1:]
+                    # try:
+                    #     msg_b[-1] = msg_b[-1].replace(b'>>> ', b'')
+                    # except Exception as e:
+                    #     pass
+                    # self.ble_cp.output = b'\n'.join([m for m in msg_b if m != b''])
                 try:
-                    data = eval(self.ble_cp.output.replace(b'\r', b''))
+                    data = eval(self.ble_cp.dev.response)
                 except Exception as e:
                     print(e)
                     data = b''
@@ -246,9 +248,9 @@ class BLE_TOOL:
                     self.ble_cp.sh_repl('w(' + repr(data) + ')', silent=True)
                     # time.sleep(0.05)
                 else:
-                    if len(data) > 100:
-                        for i in range(0, len(data), 100):
-                            self.ble_cp.sh_repl('w(' + repr(data[i:i+100]) + ')',
+                    if len(data) > 256:
+                        for i in range(0, len(data), 256):
+                            self.ble_cp.sh_repl('w(' + repr(data[i:i+256]) + ')',
                                                 silent=True)
                     else:
                         self.ble_cp.sh_repl('w(' + repr(data) + ')',
@@ -878,21 +880,21 @@ def get_dir_size_recursive(dir):
 #     if len(file_list_abs_path) > 1:
 #         for file in file_list_abs_path:
 #             print('- {}'.format(file))
-#         shr_htool.start_SOC()
+#         ble_htool.start_SOC()
 #         for file in file_list_abs_path:
-#             shr_htool.put(file)
+#             ble_htool.put(file)
 #             time.sleep(0.2)
 #         # ble_cp.sh_repl("print('Done!')")
 #         time.sleep(0.2)
-#         shr_htool.stop_SOC()
+#         ble_htool.stop_SOC()
 #     elif len(file_list_abs_path) == 1:
 #         file_to_put = file_list_abs_path[0]
 #         print('- {}'.format(file_to_put))
-#         shr_htool.start_SOC()
-#         shr_htool.put(file_to_put)
+#         ble_htool.start_SOC()
+#         ble_htool.put(file_to_put)
 #         # ble_cp.sh_repl("print('Done!')")
 #         time.sleep(0.2)
-#         shr_htool.stop_SOC()
+#         ble_htool.stop_SOC()
 #     else:
 #         print('NO FILES IN DIR TO UPLOAD')
 #     # Now create subdirs:
@@ -1397,75 +1399,75 @@ def custom_sh_cmd(cmd_inp):
                 list_of_files = os.listdir(cmd_inp.split()[1])
         if list_of_files != []:
             print_table(list_of_files, wide=28, format_SH=True)
-#
-#     if cmd_inp.split(' ')[0] == 'get':
-#         try:
-#             print('File/s to get:')
-#             file = cmd_inp.split(' ')[1]
-#             if file == 'cwd':
-#                 ble_cp.sh_repl("[file for file in os.listdir() if not os.stat(file)[0] & 0x4000]")
-#                 espdev.get_output()
-#                 files_to_put = ble_cp.dev.output
-#                 for file in files_to_put:
-#                     print('- {}'.format(file))
-#                 shr_htool.start_SOC()
-#                 for file in files_to_put:
-#                     shr_htool.get(file)
-#                     time.sleep(0.2)
-#                 # ble_cp.sh_repl("print('Done!')")
-#                 time.sleep(0.2)
-#                 shr_htool.stop_SOC()
-#             elif '*' in file:
-#                 ble_cp.sh_repl("[file for file in os.listdir() if '{}' in file and not os.stat(file)[0] & 0x4000]".format(file.replace('*', '')))
-#                 espdev.get_output()
-#                 files_to_put_re = ble_cp.dev.output
-#                 if files_to_put_re is None or files_to_put_re == []:
-#                     print('No files found that match "{}"'.format(file))
-#                 else:
-#                     for file in files_to_put_re:
-#                         print('- {}'.format(file))
-#                     shr_htool.start_SOC()
-#                     for file in files_to_put_re:
-#                         shr_htool.get(file)
-#                         time.sleep(0.2)
-#                     # ble_cp.sh_repl("print('Done!')")
-#                     time.sleep(0.2)
-#                     shr_htool.stop_SOC()
-#             elif len(cmd_inp.split(' ')) > 2:
-#                 files_to_put = cmd_inp.split(' ')[1:]
-#                 # files_to_put_dir = [fl for fl in os.listdir() if os.path.isfile(fl) and fl in files_to_put]
-#                 ble_cp.sh_repl("[file for file in os.listdir() if file in {} and not os.stat(file)[0] & 0x4000]".format(files_to_put))
-#                 espdev.get_output()
-#                 files_to_put_dir = ble_cp.dev.output
-#                 if len(files_to_put_dir) != len(files_to_put):
-#                     print('One or more files not found in cwd')
-#                 else:
-#                     for file in files_to_put_dir:
-#                         print('- {}'.format(file))
-#                     shr_htool.start_SOC()
-#                     for file in files_to_put_dir:
-#                         shr_htool.get(file)
-#                         time.sleep(0.2)
-#                     # ble_cp.sh_repl("print('Done!')")
-#                     time.sleep(0.2)
-#                     shr_htool.stop_SOC()
-#             else:
-#                 ble_cp.sh_repl("[file for file in os.listdir() if file in {} and not os.stat(file)[0] & 0x4000]".format([file]))
-#                 espdev.get_output()
-#                 files_to_put_dir = ble_cp.dev.output
-#                 if len(files_to_put_dir) == 0:
-#                     print('File not Found\nIndicate a file to get')
-#                 else:
-#                     print('- {}'.format(file))
-#                     # shr_htool.start_SOC()
-#                     shr_htool.get(file)
-#                     # ble_cp.sh_repl("print('Done!')")
-#                     time.sleep(0.2)
-#                     shr_htool.stop_SOC()
-#         except Exception as e:
-#             print(e)
-#             print('File not Found\nIndicate a file to get')
-#
+
+    if cmd_inp.split(' ')[0] == 'get':
+        try:
+            print('File/s to get:')
+            file = cmd_inp.split(' ')[1]
+            if file == 'cwd':
+                ble_cp.sh_repl("[file for file in os.listdir() if not os.stat(file)[0] & 0x4000]")
+                ble_cp.dev.get_output()
+                files_to_put = ble_cp.dev.output
+                for file in files_to_put:
+                    print('- {}'.format(file))
+                ble_htool.start_SOC()
+                for file in files_to_put:
+                    ble_htool.get(file)
+                    time.sleep(0.2)
+                # ble_cp.sh_repl("print('Done!')")
+                time.sleep(0.2)
+                ble_htool.stop_SOC()
+            elif '*' in file:
+                ble_cp.sh_repl("[file for file in os.listdir() if '{}' in file and not os.stat(file)[0] & 0x4000]".format(file.replace('*', '')))
+                ble_cp.dev.get_output()
+                files_to_put_re = ble_cp.dev.output
+                if files_to_put_re is None or files_to_put_re == []:
+                    print('No files found that match "{}"'.format(file))
+                else:
+                    for file in files_to_put_re:
+                        print('- {}'.format(file))
+                    ble_htool.start_SOC()
+                    for file in files_to_put_re:
+                        ble_htool.get(file)
+                        time.sleep(0.2)
+                    # ble_cp.sh_repl("print('Done!')")
+                    time.sleep(0.2)
+                    ble_htool.stop_SOC()
+            elif len(cmd_inp.split(' ')) > 2:
+                files_to_put = cmd_inp.split(' ')[1:]
+                # files_to_put_dir = [fl for fl in os.listdir() if os.path.isfile(fl) and fl in files_to_put]
+                ble_cp.sh_repl("[file for file in os.listdir() if file in {} and not os.stat(file)[0] & 0x4000]".format(files_to_put))
+                ble_cp.dev.get_output()
+                files_to_put_dir = ble_cp.dev.output
+                if len(files_to_put_dir) != len(files_to_put):
+                    print('One or more files not found in cwd')
+                else:
+                    for file in files_to_put_dir:
+                        print('- {}'.format(file))
+                    ble_htool.start_SOC()
+                    for file in files_to_put_dir:
+                        ble_htool.get(file)
+                        time.sleep(0.2)
+                    # ble_cp.sh_repl("print('Done!')")
+                    time.sleep(0.2)
+                    ble_htool.stop_SOC()
+            else:
+                ble_cp.sh_repl("[file for file in os.listdir() if file in {} and not os.stat(file)[0] & 0x4000]".format([file]))
+                ble_cp.dev.get_output()
+                files_to_put_dir = ble_cp.dev.output
+                if len(files_to_put_dir) == 0:
+                    print('File not Found\nIndicate a file to get')
+                else:
+                    print('- {}'.format(file))
+                    # ble_htool.start_SOC()
+                    ble_htool.get(file)
+                    # ble_cp.sh_repl("print('Done!')")
+                    time.sleep(0.2)
+                    ble_htool.stop_SOC()
+        except Exception as e:
+            print(e)
+            print('File not Found\nIndicate a file to get')
+
     if cmd_inp.split(' ')[0] == 'put':
         try:
             print('File/s to put:')
@@ -1782,13 +1784,13 @@ def custom_sh_cmd(cmd_inp):
 #         print(dir_lib)
 #         for file in upyutils_scripts:
 #             print('- {}'.format(file))
-#         shr_htool.start_SOC()
+#         ble_htool.start_SOC()
 #         for file in upyutils_scripts:
-#             shr_htool.put(file, abs_path=False)
+#             ble_htool.put(file, abs_path=False)
 #             time.sleep(0.2)
 #         # ble_cp.sh_repl("print('Done!')")
 #         time.sleep(0.2)
-#         shr_htool.stop_SOC()
+#         ble_htool.stop_SOC()
 #         send_custom_sh_cmd("cd('..')")
 #         send_custom_sh_cmd("cd('{}')".format(cwd_now))
 #
@@ -2235,13 +2237,13 @@ def custom_sh_cmd(cmd_inp):
 #                     print('Files to push:')
 #                 for file in files_to_put_dir:
 #                     print('- {}'.format(file))
-#                 shr_htool.start_SOC()
+#                 ble_htool.start_SOC()
 #                 for file in files_to_put_dir:
-#                     shr_htool.put(file)
+#                     ble_htool.put(file)
 #                     time.sleep(0.2)
 #                 # ble_cp.sh_repl("print('Done!')")
 #                 time.sleep(0.2)
-#                 shr_htool.stop_SOC()
+#                 ble_htool.stop_SOC()
 #                 # Save commit log in dev
 #                 # log_to_dev += b'---'*10+b'\n'
 #                 print('\nUpdating dev .gitlog.', end='')
@@ -2310,13 +2312,13 @@ def custom_sh_cmd(cmd_inp):
 #                 files_to_put = [fl for fl in os.listdir() if os.path.isfile(fl) and not fl.startswith('.')]
 #                 for file in files_to_put:
 #                     print('- {}'.format(file))
-#                 shr_htool.start_SOC()
+#                 ble_htool.start_SOC()
 #                 for file in files_to_put:
-#                     shr_htool.put(file)
+#                     ble_htool.put(file)
 #                     time.sleep(0.2)
 #                 # ssl_cp.ssl_repl("print('Done!')")
 #                 time.sleep(0.2)
-#                 shr_htool.stop_SOC()
+#                 ble_htool.stop_SOC()
 #
 #             dirs_to_sync = [fl for fl in os.listdir() if os.path.isdir(fl) and not fl.startswith('.')]
 #             print('Dir/s to sync:')
@@ -3786,7 +3788,7 @@ while repl:
         try:
             ble_cp.flush_conn()
             # if hasattr(SERIAL_TOOL, 'serv_soc'):
-            #     shr_htool.stop_SOC()
+            #     ble_htool.stop_SOC()
             continue
         except Exception as e:
             print(e)
