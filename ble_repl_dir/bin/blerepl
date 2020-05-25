@@ -46,7 +46,7 @@ from prompt_toolkit import print_formatted_text
 from prompt_toolkit.shortcuts import (radiolist_dialog, message_dialog,
                                       input_dialog, yes_no_dialog)
 
-# TODO: PUT, GET --> like serial, EDIT?
+# TODO: EDIT?
 
 
 class BLE_REPL_server:
@@ -380,6 +380,8 @@ d_prompt = '>>> '
 # KEYBINDINGS
 kb = KeyBindings()
 
+mem_show_rp = {'show': False, 'call': False, 'used': '?',
+               'free': '?', 'percent': 0}
 dev_path = {'p': ' '}
 local_path = {'p': ''}
 show_local_path = {'s': False}
@@ -818,116 +820,114 @@ def get_dir_size_recursive(dir):
     return sum([os.stat(dir+'/'+f)[6] if not os.stat(dir+'/'+f)[0] & 0x4000 else get_dir_size_recursive(dir+'/'+f) for f in os.listdir(dir)])
 
 #
-# def d_sync_recursive(folder, dev=None, rootdir='./', root_sync_folder=None,
-#                      show_tree=False):
-#     t0 = time.time()
-#     type_file_dict = {True:'<f>', False:'<d>'}
-#     if folder == root_sync_folder:
-#         print('DIRECTORY TO SYNC: {}'.format(folder))
-#         print('DIRECTORY SIZE: {}'.format(print_filesys_info(get_dir_size_recursive(folder))))
-#     if show_tree:
-#         print('DIRECTORY TREE STRUCTURE:\n')
-#         tree(path=folder)
-#     time.sleep(1)
-#     print('\n')
-#     print('***** {} *****'.format(folder))
-#     print('\n')
-#     directory = folder
-#     file_list = None
-#     file_list_abs_path = []
-#     dir_list_abs_path = []
-#     current_dir = directory
-#     # get directory structure:
-#     print('ROOT DIRECTORY: {}'.format(rootdir))
-#     print('DIRECTORY TO SYNC: {}'.format(directory))
-#     print('\n')
-#     print('CHECKING IF DIRECTORY {} IN: {}'.format(
-#         directory.split('/')[-1], rootdir))
-#     if directory.split('/')[-1] in os.listdir(rootdir):
-#         print('DIRECTORY {} FOUND'.format(directory))
-#         print('\n')
-#         print('FILES/DIRS IN DIRECTORY {}:'.format(directory))
-#         du(path='./{}'.format(directory), absp=False, hidden=True)
-#         # for file in os.listdir(directory):
-#         #     print('- {} {} [{}]'.format(type_file_dict[os.path.isfile(os.path.join(current_dir, file))],
-#         #                            file, print_filesys_info(os.stat(os.path.join(current_dir, file))[6])))
-#         file_list = os.listdir(directory)
-#         print('\n')
-#         for file in file_list:
-#             if os.path.isfile(os.path.join(current_dir, file)):
-#                 file_list_abs_path.append(os.path.join(current_dir, file))
-#             elif os.path.isdir(os.path.join(current_dir, file)):
-#                 dir_list_abs_path.append(os.path.join(current_dir, file))
-#     print('LIST OF FILES TO UPLOAD:')
-#     for file in file_list_abs_path:
-#         print('- {}'.format(file.split('/')[-1]))
-#     print('\n')
-#     print('LIST OF SUBDIRS TO CREATE:')
-#     for subdir in dir_list_abs_path:
-#         print('- {}'.format(subdir.split('/')[-1]))
-#     print('\n')
-#     # Now create the root sync dir:
-#     if './' == rootdir:
-#         rootdir = ''
-#     dev_root_list = send_custom_sh_cmd("os.listdir('{}')".format(rootdir))
-#     if current_dir.split('/')[-1] not in dev_root_list:
-#         print('\n')
-#         print('MAKING DIR: {}'.format(current_dir))
-#         print('\n')
-#         dev_mkdir = ble_cp.sh_repl("os.mkdir('{}')".format(current_dir))
-#         print('\n')
-#     print('UPLOADING FILES TO {}'.format(current_dir))
-#     if len(file_list_abs_path) > 1:
-#         for file in file_list_abs_path:
-#             print('- {}'.format(file))
-#         ble_htool.start_SOC()
-#         for file in file_list_abs_path:
-#             ble_htool.put(file)
-#             time.sleep(0.2)
-#         # ble_cp.sh_repl("print('Done!')")
-#         time.sleep(0.2)
-#         ble_htool.stop_SOC()
-#     elif len(file_list_abs_path) == 1:
-#         file_to_put = file_list_abs_path[0]
-#         print('- {}'.format(file_to_put))
-#         ble_htool.start_SOC()
-#         ble_htool.put(file_to_put)
-#         # ble_cp.sh_repl("print('Done!')")
-#         time.sleep(0.2)
-#         ble_htool.stop_SOC()
-#     else:
-#         print('NO FILES IN DIR TO UPLOAD')
-#     # Now create subdirs:
-#     print('\n')
-#     print('MAKING SUBDIRS NOW...')
-#     for dir_ in dir_list_abs_path:
-#         print('\n')
-#         current_dir = dir_
-#         # Now create the root sync dir:
-#         try:
-#             dir_to_sync = directory
-#             dev_directory = send_custom_sh_cmd("os.listdir('{}')".format(dir_to_sync))
-#         except Exception as e:
-#             pass
-#         if not current_dir.split('/')[-1] in dev_directory:
-#             print('Creating dir: {}'.format(current_dir))
-#             dev_mkdir = ble_cp.sh_repl("os.mkdir('{}')".format(current_dir))
-#         else:
-#             print('DIRECTORY {} ALREADY EXISTS'.format(current_dir.split('/')[-1]))
-#     if len(dir_list_abs_path) == 0:
-#         print('NO MORE SUBDIRS')
-#     root = directory
-#     for dir_ in dir_list_abs_path:
-#         d_sync_recursive(dir_, dev, root)
-#
-#     if directory == root_sync_folder:
-#         print('Done in : {:.2f} seconds'.format(time.time()-t0))
-#
-#
+def d_sync_recursive(folder, dev=None, rootdir='./', root_sync_folder=None,
+                     show_tree=False):
+    t0 = time.time()
+    type_file_dict = {True:'<f>', False:'<d>'}
+    if folder == root_sync_folder:
+        print('DIRECTORY TO SYNC: {}'.format(folder))
+        print('DIRECTORY SIZE: {}'.format(print_filesys_info(get_dir_size_recursive(folder))))
+    if show_tree:
+        print('DIRECTORY TREE STRUCTURE:\n')
+        tree(path=folder)
+    time.sleep(1)
+    print('\n')
+    print('***** {} *****'.format(folder))
+    print('\n')
+    directory = folder
+    file_list = None
+    file_list_abs_path = []
+    dir_list_abs_path = []
+    current_dir = directory
+    # get directory structure:
+    print('ROOT DIRECTORY: {}'.format(rootdir))
+    print('DIRECTORY TO SYNC: {}'.format(directory))
+    print('\n')
+    print('CHECKING IF DIRECTORY {} IN: {}'.format(
+        directory.split('/')[-1], rootdir))
+    if directory.split('/')[-1] in os.listdir(rootdir):
+        print('DIRECTORY {} FOUND'.format(directory))
+        print('\n')
+        print('FILES/DIRS IN DIRECTORY {}:'.format(directory))
+        du(path='./{}'.format(directory), absp=False, hidden=True)
+        # for file in os.listdir(directory):
+        #     print('- {} {} [{}]'.format(type_file_dict[os.path.isfile(os.path.join(current_dir, file))],
+        #                            file, print_filesys_info(os.stat(os.path.join(current_dir, file))[6])))
+        file_list = os.listdir(directory)
+        print('\n')
+        for file in file_list:
+            if os.path.isfile(os.path.join(current_dir, file)):
+                file_list_abs_path.append(os.path.join(current_dir, file))
+            elif os.path.isdir(os.path.join(current_dir, file)):
+                dir_list_abs_path.append(os.path.join(current_dir, file))
+    print('LIST OF FILES TO UPLOAD:')
+    for file in file_list_abs_path:
+        print('- {}'.format(file.split('/')[-1]))
+    print('\n')
+    print('LIST OF SUBDIRS TO CREATE:')
+    for subdir in dir_list_abs_path:
+        print('- {}'.format(subdir.split('/')[-1]))
+    print('\n')
+    # Now create the root sync dir:
+    if './' == rootdir:
+        rootdir = ''
+    dev_root_list = send_custom_sh_cmd("os.listdir('{}')".format(rootdir))
+    if current_dir.split('/')[-1] not in dev_root_list:
+        print('\n')
+        print('MAKING DIR: {}'.format(current_dir))
+        print('\n')
+        dev_mkdir = ble_cp.sh_repl("os.mkdir('{}')".format(current_dir))
+        print('\n')
+    print('UPLOADING FILES TO {}'.format(current_dir))
+    if len(file_list_abs_path) > 1:
+        for file in file_list_abs_path:
+            print('- {}'.format(file))
+        ble_htool.start_SOC()
+        for file in file_list_abs_path:
+            ble_htool.put(file)
+            time.sleep(0.2)
+        # ble_cp.sh_repl("print('Done!')")
+        time.sleep(0.2)
+        ble_htool.stop_SOC()
+    elif len(file_list_abs_path) == 1:
+        file_to_put = file_list_abs_path[0]
+        print('- {}'.format(file_to_put))
+        ble_htool.start_SOC()
+        ble_htool.put(file_to_put)
+        # ble_cp.sh_repl("print('Done!')")
+        time.sleep(0.2)
+        ble_htool.stop_SOC()
+    else:
+        print('NO FILES IN DIR TO UPLOAD')
+    # Now create subdirs:
+    print('\n')
+    print('MAKING SUBDIRS NOW...')
+    for dir_ in dir_list_abs_path:
+        print('\n')
+        current_dir = dir_
+        # Now create the root sync dir:
+        try:
+            dir_to_sync = directory
+            dev_directory = send_custom_sh_cmd("os.listdir('{}')".format(dir_to_sync))
+        except Exception as e:
+            pass
+        if not current_dir.split('/')[-1] in dev_directory:
+            print('Creating dir: {}'.format(current_dir))
+            dev_mkdir = ble_cp.sh_repl("os.mkdir('{}')".format(current_dir))
+        else:
+            print('DIRECTORY {} ALREADY EXISTS'.format(current_dir.split('/')[-1]))
+    if len(dir_list_abs_path) == 0:
+        print('NO MORE SUBDIRS')
+    root = directory
+    for dir_ in dir_list_abs_path:
+        d_sync_recursive(dir_, dev, root)
+
+    if directory == root_sync_folder:
+        print('Done in : {:.2f} seconds'.format(time.time()-t0))
 
 
-def send_custom_sh_cmd(cmd, sh_silent=True):
-    ble_cp.sh_repl(cmd, silent=True)
+def send_custom_sh_cmd(cmd, sh_silent=True, **kargs):
+    ble_cp.sh_repl(cmd, silent=True, **kargs)
     if not sh_silent:
         print(ble_cp.dev.output)
     return ble_cp.dev.output
@@ -946,24 +946,34 @@ def print_filesys_info(filesize):
     return sizestr
 
 
-def get_rprompt():  # make async
+def get_rprompt():
     if status_encryp_msg['S']:
-        RAM = send_custom_sh_cmd(
-            'from micropython import mem_info;mem_info()')
-        mem_info = RAM.replace('GC', '\nGC').replace('No', '\nNo').splitlines()[1]
-        mem = {elem.strip().split(':')[0]: int(elem.strip().split(':')[
-                          1]) for elem in mem_info[4:].split(',')}
-        used_mem = mem['used']/1024
-        free_mem = mem['free']/1024
-        used_mem_s = "{:.3f} KB".format(used_mem)
-        free_mem_s = "{:.3f} KB".format(free_mem)
-        total_mem = mem['total']/1024
-        use_percent = round((used_mem/total_mem)*100, 2)
-
-        if use_percent < 85:
-            return HTML('<aaa fg="ansiblack" bg="ansiwhite"> RAM </aaa><b><style fg="ansigreen"> USED </style></b><aaa fg="ansiblack" bg="ansiwhite"> {} </aaa><b><style fg="ansigreen"> FREE </style></b><aaa fg="ansiblack" bg="ansiwhite"> {} </aaa>'.format(used_mem_s, free_mem_s))
+        if mem_show_rp['call']:
+            # RAM = send_custom_sh_cmd(
+            #     'from micropython import mem_info;mem_info()', rtn=True,
+            #     long_string=True)
+            #
+            # mem_info = RAM.replace('GC', '\nGC').replace('No', '\nNo').splitlines()[1]
+            # mem = {elem.strip().split(':')[0]: int(elem.strip().split(':')[
+            #                   1]) for elem in mem_info[4:].split(',')}
+            # used_mem = mem['used']/1024
+            # free_mem = mem['free']/1024
+            # used_mem_s = "{:.3f} KB".format(used_mem)
+            # free_mem_s = "{:.3f} KB".format(free_mem)
+            # # set used and free
+            # mem_show_rp['used'] = used_mem_s
+            # mem_show_rp['free'] = free_mem_s
+            # total_mem = mem['total']/1024
+            # use_percent = round((used_mem/total_mem)*100, 2)
+            # mem_show_rp['percent'] = use_percent
+            mem_show_rp['call'] = False
         else:
-            return HTML('<aaa fg="ansiblack" bg="ansiwhite"> RAM </aaa><b><style fg="ansired"> USED </style></b><aaa fg="ansiblack" bg="ansiwhite"> {} </aaa><b><style fg="ansired"> FREE </style></b><aaa fg="ansiblack" bg="ansiwhite"> {} </aaa>'.format(used_mem_s, free_mem_s))
+            pass
+
+        if mem_show_rp['percent'] < 85:
+            return HTML('<aaa fg="ansiblack" bg="ansiwhite"> RAM </aaa><b><style fg="ansigreen"> USED </style></b><aaa fg="ansiblack" bg="ansiwhite"> {} </aaa><b><style fg="ansigreen"> FREE </style></b><aaa fg="ansiblack" bg="ansiwhite"> {} </aaa>'.format(mem_show_rp['used'], mem_show_rp['free']))
+        else:
+            return HTML('<aaa fg="ansiblack" bg="ansiwhite"> RAM </aaa><b><style fg="ansired"> USED </style></b><aaa fg="ansiblack" bg="ansiwhite"> {} </aaa><b><style fg="ansired"> FREE </style></b><aaa fg="ansiblack" bg="ansiwhite"> {} </aaa>'.format(mem_show_rp['used'], mem_show_rp['free']))
     else:
         return HTML('<b><style fg="ansiblack"> {} </style></b>'.format(' '*10))
 
@@ -1539,18 +1549,18 @@ def custom_sh_cmd(cmd_inp):
         except Exception as e:
             print('Indicate a file to show')
 
-#     if cmd_inp.split(' ')[0] == 'd_sync':
-#         if len(cmd_inp.split()) == 1: # root_dir
-#             dir_to_sync = os.getcwd().split('/')[-1]
-#             # print('Directory to sync: {}'.format(dir_to_sync))
-#             os.chdir('..')
-#             d_sync_recursive(dir_to_sync, show_tree=True, root_sync_folder=dir_to_sync)
-#             os.chdir(dir_to_sync)
-#         elif len(cmd_inp.split()) == 2:
-#             dir_to_sync = cmd_inp.split()[-1]
-#             # print('Directory to sync: {}'.format(dir_to_sync))
-#             d_sync_recursive(dir_to_sync, show_tree=True, root_sync_folder=dir_to_sync)
-#
+    if cmd_inp.split(' ')[0] == 'd_sync':
+        if len(cmd_inp.split()) == 1: # root_dir
+            dir_to_sync = os.getcwd().split('/')[-1]
+            # print('Directory to sync: {}'.format(dir_to_sync))
+            os.chdir('..')
+            d_sync_recursive(dir_to_sync, show_tree=True, root_sync_folder=dir_to_sync)
+            os.chdir(dir_to_sync)
+        elif len(cmd_inp.split()) == 2:
+            dir_to_sync = cmd_inp.split()[-1]
+            # print('Directory to sync: {}'.format(dir_to_sync))
+            d_sync_recursive(dir_to_sync, show_tree=True, root_sync_folder=dir_to_sync)
+
     if cmd_inp.split(' ')[0] == 'l_micropython':
         print('<-- Local machine MicroPython -->')
         try:
@@ -2176,283 +2186,286 @@ def custom_sh_cmd(cmd_inp):
 #         except Exception as e:
 #             print('Indicate i2c mode (config/scan)')
 #
-#     if cmd_inp.split()[0] == 'git':
-#         cmd_git = shlex.split(cmd_inp)
-#         if 'push' in cmd_git and 'dev' in cmd_git:  # push changes to "dev repo"
-#             # Parse changed files
-#             # try:
-#             #     latest_commit = shlex.split('git show --name-only --oneline HEAD')
-#             #     commit_sha = subprocess.check_output(latest_commit).decode().split()[0]
-#             #     files_diff = shlex.split('git ls-tree --name-only -r {}'.format(commit_sha))
-#             #     files_to_push = subprocess.check_output(files_diff).decode().splitlines()
-#             # except Exception as e:
-#             #     print(e)
-#             files_to_push = []
-#             for file_tp in git_diff_files['diff']:
-#                 if file_tp not in files_to_push:
-#                     files_to_push.append(file_tp)
-#             # files_to_push = git_diff_files['diff']
-#             if len(files_to_push) == 0:
-#                 print('Everything up-to-date with {}'.format(dev_platform))
-#             else:
-#                 # Parse changed files
-#                 print('Changes to push:')
-#                 latest_commit = shlex.split('git show -{} --name-only --oneline HEAD'.format(git_diff_files['n_commits']))
-#                 subprocess.call(latest_commit)
-#                 files_to_put_dir = [fl for fl in files_to_push if os.path.isfile(fl)]
-#                 dirs_to_put_dir = ['/'.join(dir.split('/')[:-1]) for dir in files_to_put_dir]
-#                 # dirs_to_put_dir = [fl for fl in os.listdir() if not os.path.isfile(fl) and fl in files_to_push]
-#                 # print(files_to_put_dir)
-#                 # print(dirs_to_put_dir)
-#                 log_cmd = shlex.split('git log -{}'.format(git_diff_files['n_commits']))
-#                 log_to_dev = subprocess.check_output(log_cmd)
-#                 hash_cmd = shlex.split('git log -{} --pretty=format:"%H"'.format(git_diff_files['n_commits']))
-#                 hash_to_dev = subprocess.check_output(hash_cmd)
-#
-#                 cwd_now = send_custom_sh_cmd("os.getcwd()")
-#                 if len(files_to_put_dir) > 0:
-#                     if dev_platform == 'pyboard':
-#                         send_custom_sh_cmd("cd('/')")
-#                         send_custom_sh_cmd("cd('/flash')")
-#                     else:
-#                         send_custom_sh_cmd("cd('/')")
-#                 if len(dirs_to_put_dir) > 0:
-#                     print('New directories to make:')
-#                     order_dirs = [(len(dir.split('/')), dir) for dir in dirs_to_put_dir if dir != '']
-#                     order_dirs.sort()
-#                     # check if already in dev:
-#                     for _dir in order_dirs:
-#                         if '/' in _dir[1]:
-#                             dir_in_dev = send_custom_sh_cmd("os.listdir('{}')".format('/'+'/'.join(_dir[1].split('/')[:-1])))
-#                         else:
-#                             dir_in_dev = send_custom_sh_cmd("os.listdir()")
-#                         if _dir[1].split('/')[-1] not in dir_in_dev:
-#                             if _dir[1] != '':
-#                                 print('- {}'.format(_dir[1]))
-#                                 send_custom_sh_cmd("os.mkdir('{}')".format(_dir[1]))
-#                     # for _dir in order_dirs:
-#                     #     send_custom_sh_cmd("os.mkdir('{}')".format(_dir[1]))
-#
-#                 if len(files_to_put_dir) > 0:
-#                     print('Files to push:')
-#                 for file in files_to_put_dir:
-#                     print('- {}'.format(file))
-#                 ble_htool.start_SOC()
-#                 for file in files_to_put_dir:
-#                     ble_htool.put(file)
-#                     time.sleep(0.2)
-#                 # ble_cp.sh_repl("print('Done!')")
-#                 time.sleep(0.2)
-#                 ble_htool.stop_SOC()
-#                 # Save commit log in dev
-#                 # log_to_dev += b'---'*10+b'\n'
-#                 print('\nUpdating dev .gitlog.', end='')
-#                 send_custom_sh_cmd("gitlog = open('.gitlog', 'ab+');gitlog.seek(0);gl=gitlog.read();gitlog.seek(0);gitlog.write({});gitlog.write(gl);gitlog.close()".format(log_to_dev))
-#                 time.sleep(0.1)
-#                 print('\rUpdating dev .gitlog..', end='')
-#                 send_custom_sh_cmd("gitlog = open('.githash', 'ab+');gitlog.seek(0);gl=gitlog.read();gitlog.seek(0);gitlog.write({});gitlog.write(gl);gitlog.close()".format(hash_to_dev+b'\n'))
-#                 send_custom_sh_cmd("cd('{}')".format(cwd_now))
-#                 print('\rUpdating dev .gitlog..', end='')
-#                 git_diff_files['diff'] = []
-#                 git_diff_files['n_commits'] = 0
-#                 print('\r\r', end='')
-#         elif 'commit' in cmd_git:
-#             status_cmd = shlex.split('git status -s')
-#             files_to_push = [file for file in subprocess.check_output(status_cmd).decode().split('\n') if file != '']
-#             files_to_pushdev = [file.split()[1] for file in files_to_push if file.split()[0] == 'M' or file.split()[0] == 'A']
-#             if len(git_diff_files['diff']) == 0:
-#                 git_diff_files['diff'] = files_to_pushdev
-#                 if len(files_to_pushdev) > 0:
-#                     git_diff_files['n_commits'] = 1
-#             else:
-#                 git_diff_files['diff'] = git_diff_files['diff'] + [file for file in files_to_pushdev if file not in git_diff_files['diff']]
-#                 if len(files_to_pushdev) > 0:
-#                     git_diff_files['n_commits'] += 1
-#             # print(git_diff_files)
-#             subprocess.call(cmd_git)
-#
-#         elif 'pull' in cmd_git:
-#             subprocess.call(cmd_git)
-#             # git_pull_diff_cmd = shlex.split('git show --name-only --oneline FETCH_HEAD')
-#             # files_to_pushdev = [file for file in subprocess.check_output(git_pull_diff_cmd).decode().split('\n')[1:] if file != '']
-#             # git_diff_files['diff'] = files_to_pushdev
-#             cmd_git = shlex.split('git log --pretty=format:"%H"')
-#             local_gitlog = subprocess.check_output(cmd_git).decode().split()
-#             log_dev_head = send_custom_sh_cmd("cat('.githash')"+';gc.collect()')
-#             # print(log_dev_head)
-#             log_info_list = log_dev_head.split()
-#             if local_gitlog == log_info_list:
-#                 pass
-#             else:
-#                 if len(git_diff_files['diff']) > 0:  # tracked changes
-#                     cmd_git_l = shlex.split('git log --name-status  --pretty=format:"%H"')
-#                     local_gitlog_files = subprocess.check_output(cmd_git_l).decode()
-#                     commit_dict = {c.split('\n')[0] : [s for s in c.replace('\t', '\n').split()[1:]] for c in local_gitlog_files.split('\n\n')}
-#                     for commit in commit_dict.keys():
-#                         if commit not in log_info_list:
-#                             if any([file not in git_diff_files['diff'] for file in commit_dict[commit][1::2]]):
-#                                 git_diff_files['diff'] += [file for file in commit_dict[commit][1::2] if file not in git_diff_files['diff']]
-#                     git_diff_files['n_commits'] = int(len(local_gitlog) - len(log_info_list))
-#
-#                 else:  # untracked changes (outside shell)
-#                     cmd_git_l = shlex.split('git log --name-status  --pretty=format:"%H"')
-#                     local_gitlog = subprocess.check_output(cmd_git_l).decode()
-#                     commit_dict = {c.split('\n')[0] : [s for s in c.replace('\t', '\n').split()[1:]] for c in local_gitlog.split('\n\n')}
-#                     for commit in commit_dict.keys():
-#                         if commit not in log_info_list:
-#                             git_diff_files['diff'] += commit_dict[commit][1::2]
-#                             git_diff_files['n_commits'] += 1
-#
-#             # print(status_msg)
-#
-#         elif 'clone_dev' in cmd_git:
-#             print('File/s to put:')
-#             file = 'cwd'
-#             if file == 'cwd':
-#                 files_to_put = [fl for fl in os.listdir() if os.path.isfile(fl) and not fl.startswith('.')]
-#                 for file in files_to_put:
-#                     print('- {}'.format(file))
-#                 ble_htool.start_SOC()
-#                 for file in files_to_put:
-#                     ble_htool.put(file)
-#                     time.sleep(0.2)
-#                 # ssl_cp.ssl_repl("print('Done!')")
-#                 time.sleep(0.2)
-#                 ble_htool.stop_SOC()
-#
-#             dirs_to_sync = [fl for fl in os.listdir() if os.path.isdir(fl) and not fl.startswith('.')]
-#             print('Dir/s to sync:')
-#             for _dir in dirs_to_sync:
-#                 print('- {}'.format(_dir))
-#                 # print('Directory to sync: {}'.format(dir_to_sync))
-#                 d_sync_recursive(_dir, show_tree=True, root_sync_folder=_dir)
-#
-#         elif 'log' in cmd_git and 'dev' in cmd_git:
-#             try:
-#                 if '-a' in cmd_git:
-#                     # ble_cp.sh_repl("cat('.gitlog')"+';gc.collect()', follow=True)
-#                     log_dev_head = send_custom_sh_cmd("cat('.gitlog')"+';gc.collect()')
-#                     log_dev_head = log_dev_head.replace('\n ', '\n\n ').replace('\ncommit', '\n\ncommit')
-#                     log_dev_head = log_dev_head.replace('\n\ncommit', '\n\n{}commit'.format(YELLOW)).replace('\nAuthor: ', '{}\nAuthor: '.format(CEND))
-#                     last_commit_header = log_dev_head.split('\n')[0]
-#                     if 'Traceback (most recent call last)' in last_commit_header:
-#                         print('Device {} repo not initiated'.format(dev_platform))
-#                     else:
-#                         log_dev_head = log_dev_head.replace(last_commit_header, '')
-#                         head_dev = ' ({}HEAD -> {}master{} {}'.format(BCYAN, CGREEN,CEND+YELLOW+','+BCYAN+CRED,dev_platform+CEND+YELLOW)
-#                         commit = "{}{}){}".format(YELLOW, last_commit_header + head_dev, CEND)
-#                         print(commit, end='')
-#                         print(log_dev_head)
-#                 else:
-#                     log_dev_head = send_custom_sh_cmd("head('.gitlog')"+';gc.collect()')
-#                     # print(log_dev_head)
-#                     log_info_list = log_dev_head.split('\ncommit ')[0].replace('\n    ', '\n\n    ', 1)
-#                     commit_body = '\n'.join(log_info_list.split('\n')[1:])
-#                     commit_head = log_info_list.split('\n')[0]
-#                     if 'Traceback (most recent call last)' in commit_head:
-#                         print('Device {} repo not initiated'.format(dev_platform))
-#                     else:
-#                         head_dev = ' ({}HEAD -> {}master{} {}'.format(BCYAN, CGREEN,CEND+YELLOW+','+BCYAN+CRED,dev_platform+CEND+YELLOW)
-#                         commit = "{}{}){}".format(YELLOW, commit_head + head_dev, CEND)
-#                         print(commit)
-#                         print(commit_body)
-#             except Exception as e:
-#                 print('No commits in dev log to show')
-#
-#         elif 'log' in cmd_git and 'host' in cmd_git:
-#             cmd_git = shlex.split('git log -1')
-#             subprocess.call(cmd_git)
-#
-#         elif 'init' in cmd_git and 'dev' in cmd_git:
-#             cwd_now = send_custom_sh_cmd("os.getcwd()")
-#             if dev_platform == 'pyboard':
-#                 send_custom_sh_cmd("cd('/')")
-#                 send_custom_sh_cmd("cd('/flash')")
-#             else:
-#                 send_custom_sh_cmd("cd('/')")
-#             is_gitlog = "'.gitlog' in os.listdir()"
-#             is_init = send_custom_sh_cmd(is_gitlog)
-#             if is_init:
-#                 print('Device {} repo already initiated'.format(dev_platform))
-#             else:
-#                 send_custom_sh_cmd("gitlog = open('.gitlog', 'w');gitlog.close()")
-#                 send_custom_sh_cmd("gitlog = open('.githash', 'w');gitlog.close()")
-#                 print('Device {} repo initiated succesfully!'.format(dev_platform))
-#
-#             send_custom_sh_cmd("cd('{}')".format(cwd_now))
-#
-#         elif 'status' in cmd_git and 'dev' in cmd_git:
-#             cmd_git = shlex.split('git log --pretty=format:"%H"')
-#             local_gitlog = subprocess.check_output(cmd_git).decode().split()
-#             try:
-#                 log_dev_head = send_custom_sh_cmd("cat('.githash')"+';gc.collect()')
-#                 # print(log_dev_head)
-#                 log_info_list = log_dev_head.split()
-#                 if 'Traceback' in log_info_list and 'ENOENT' in log_info_list:
-#                     log_info_list = []
-#             except Exception as e:
-#                 log_info_list = []
-#
-#             if local_gitlog == log_info_list:
-#                 status_msg = "On branch master\nYour branch is up to date with '{}'.\n\nnothing to commit, working tree clean".format(dev_platform)
-#             else:
-#                 if len(git_diff_files['diff']) > 0:  # tracked changes
-#                     cmd_git_l = shlex.split('git log --name-status  --pretty=format:"%H"')
-#                     local_gitlog_files = subprocess.check_output(cmd_git_l).decode()
-#                     commit_dict = {c.split('\n')[0] : [s for s in c.replace('\t', '\n').split()[1:]] for c in local_gitlog_files.split('\n\n')}
-#                     for commit in commit_dict.keys():
-#                         if commit not in log_info_list:
-#                             if any([file not in git_diff_files['diff'] for file in commit_dict[commit][1::2]]):
-#                                 git_diff_files['diff'] += [file for file in commit_dict[commit][1::2] if file not in git_diff_files['diff']]
-#                     git_diff_files['n_commits'] = int(len(local_gitlog) - len(log_info_list))
-#
-#                     status_msg = "On branch master\nYour branch is ahead of '{0}' by {1} commit{2}.\n (use 'git push dev' to push your local commits to {0})\n\nnothing to commit, working tree clean".format(dev_platform, git_diff_files['n_commits'],
-#                                 ['s' if git_diff_files['n_commits'] > 1 else '' for i in range(1)][0])
-#
-#                 else:  # untracked changes (outside shell)
-#                     cmd_git_l = shlex.split('git log --name-status  --pretty=format:"%H"')
-#                     local_gitlog = subprocess.check_output(cmd_git_l).decode()
-#                     commit_dict = {c.split('\n')[0] : [s for s in c.replace('\t', '\n').split()[1:]] for c in local_gitlog.split('\n\n')}
-#                     for commit in commit_dict.keys():
-#                         if commit not in log_info_list:
-#                             git_diff_files['diff'] += commit_dict[commit][1::2]
-#                             git_diff_files['n_commits'] += 1
-#
-#                     status_msg = "On branch master\nYour branch is ahead of '{0}' by {1} commit{2} not tracked by upydev.\n (use 'git push dev' to push last commit changes to {0})\n\nnothing to commit, working tree clean".format(dev_platform, git_diff_files['n_commits'],
-#                                 ['s' if git_diff_files['n_commits'] > 1 else '' for i in range(1)][0])
-#             print(status_msg)
-#
-#         elif 'repo' in cmd_git:
-#             remote_repo_cmd = shlex.split('git remote -v')
-#             git_repo = subprocess.check_output(remote_repo_cmd)
-#             if git_repo != b'':
-#                 webbrowser.open(git_repo.split()[1].decode())
-#             else:
-#                 print('git repository does not have a remote')
-#
-#         else:
-#             subprocess.call(cmd_git)
-#
-#     if cmd_inp == 'tig':
-#         try:
-#             tigtool = 'tig'
-#             tig_cmd = shlex.split(tigtool)
-#             # old_action = signal.signal(signal.SIGINT, signal.SIG_IGN)
-#             #
-#             # def preexec_function(action=old_action):
-#             #     signal.signal(signal.SIGINT, action)
-#             try:
-#                 if '.git' in os.listdir():
-#                     tig = subprocess.call(tig_cmd)
-#                 else:
-#                     print('tig: Not a git repository')
-#                 # signal.signal(signal.SIGINT, old_action)
-#             except Exception as e:
-#                 print(e)
-#                 print('tig not found')
-#         except Exception as e:
-#             print(e)
-#             pass
+    if cmd_inp.split()[0] == 'git':
+        cmd_git = shlex.split(cmd_inp)
+        if 'push' in cmd_git and 'dev' in cmd_git:  # push changes to "dev repo"
+            # Parse changed files
+            # try:
+            #     latest_commit = shlex.split('git show --name-only --oneline HEAD')
+            #     commit_sha = subprocess.check_output(latest_commit).decode().split()[0]
+            #     files_diff = shlex.split('git ls-tree --name-only -r {}'.format(commit_sha))
+            #     files_to_push = subprocess.check_output(files_diff).decode().splitlines()
+            # except Exception as e:
+            #     print(e)
+            files_to_push = []
+            for file_tp in git_diff_files['diff']:
+                if file_tp not in files_to_push:
+                    files_to_push.append(file_tp)
+            # files_to_push = git_diff_files['diff']
+            if len(files_to_push) == 0:
+                print('Everything up-to-date with {}'.format(dev_platform))
+            else:
+                # Parse changed files
+                print('Changes to push:')
+                latest_commit = shlex.split('git show -{} --name-only --oneline HEAD'.format(git_diff_files['n_commits']))
+                subprocess.call(latest_commit)
+                files_to_put_dir = [fl for fl in files_to_push if os.path.isfile(fl)]
+                dirs_to_put_dir = ['/'.join(dir.split('/')[:-1]) for dir in files_to_put_dir]
+                # dirs_to_put_dir = [fl for fl in os.listdir() if not os.path.isfile(fl) and fl in files_to_push]
+                # print(files_to_put_dir)
+                # print(dirs_to_put_dir)
+                log_cmd = shlex.split('git log -{}'.format(git_diff_files['n_commits']))
+                log_to_dev = subprocess.check_output(log_cmd)
+                hash_cmd = shlex.split('git log -{} --pretty=format:"%H"'.format(git_diff_files['n_commits']))
+                hash_to_dev = subprocess.check_output(hash_cmd)
+
+                cwd_now = send_custom_sh_cmd("os.getcwd()")
+                if len(files_to_put_dir) > 0:
+                    if dev_platform == 'pyboard':
+                        send_custom_sh_cmd("cd('/')")
+                        send_custom_sh_cmd("cd('/flash')")
+                    else:
+                        send_custom_sh_cmd("cd('/')")
+                if len(dirs_to_put_dir) > 0:
+                    print('New directories to make:')
+                    order_dirs = [(len(dir.split('/')), dir) for dir in dirs_to_put_dir if dir != '']
+                    order_dirs.sort()
+                    # check if already in dev:
+                    for _dir in order_dirs:
+                        if '/' in _dir[1]:
+                            dir_in_dev = send_custom_sh_cmd("os.listdir('{}')".format('/'+'/'.join(_dir[1].split('/')[:-1])))
+                        else:
+                            dir_in_dev = send_custom_sh_cmd("os.listdir()")
+                        if _dir[1].split('/')[-1] not in dir_in_dev:
+                            if _dir[1] != '':
+                                print('- {}'.format(_dir[1]))
+                                send_custom_sh_cmd("os.mkdir('{}')".format(_dir[1]))
+                    # for _dir in order_dirs:
+                    #     send_custom_sh_cmd("os.mkdir('{}')".format(_dir[1]))
+
+                if len(files_to_put_dir) > 0:
+                    print('Files to push:')
+                for file in files_to_put_dir:
+                    print('- {}'.format(file))
+                ble_htool.start_SOC()
+                for file in files_to_put_dir:
+                    ble_htool.put(file)
+                    time.sleep(0.2)
+                # ble_cp.sh_repl("print('Done!')")
+                time.sleep(0.2)
+                ble_htool.stop_SOC()
+                # Save commit log in dev
+                # log_to_dev += b'---'*10+b'\n'
+                print('\nUpdating dev .gitlog.', end='')
+                send_custom_sh_cmd("gitlog = open('.gitlog', 'ab+');gitlog.seek(0);gl=gitlog.read();gitlog.seek(0);gitlog.write({});gitlog.write(gl);gitlog.close()".format(log_to_dev))
+                time.sleep(0.1)
+                print('\rUpdating dev .gitlog..', end='')
+                send_custom_sh_cmd("gitlog = open('.githash', 'ab+');gitlog.seek(0);gl=gitlog.read();gitlog.seek(0);gitlog.write({});gitlog.write(gl);gitlog.close()".format(hash_to_dev+b'\n'))
+                send_custom_sh_cmd("cd('{}')".format(cwd_now))
+                print('\rUpdating dev .gitlog..', end='')
+                git_diff_files['diff'] = []
+                git_diff_files['n_commits'] = 0
+                print('\r\r', end='')
+        elif 'commit' in cmd_git:
+            status_cmd = shlex.split('git status -s')
+            files_to_push = [file for file in subprocess.check_output(status_cmd).decode().split('\n') if file != '']
+            files_to_pushdev = [file.split()[1] for file in files_to_push if file.split()[0] == 'M' or file.split()[0] == 'A']
+            if len(git_diff_files['diff']) == 0:
+                git_diff_files['diff'] = files_to_pushdev
+                if len(files_to_pushdev) > 0:
+                    git_diff_files['n_commits'] = 1
+            else:
+                git_diff_files['diff'] = git_diff_files['diff'] + [file for file in files_to_pushdev if file not in git_diff_files['diff']]
+                if len(files_to_pushdev) > 0:
+                    git_diff_files['n_commits'] += 1
+            # print(git_diff_files)
+            subprocess.call(cmd_git)
+
+        elif 'pull' in cmd_git:
+            subprocess.call(cmd_git)
+            # git_pull_diff_cmd = shlex.split('git show --name-only --oneline FETCH_HEAD')
+            # files_to_pushdev = [file for file in subprocess.check_output(git_pull_diff_cmd).decode().split('\n')[1:] if file != '']
+            # git_diff_files['diff'] = files_to_pushdev
+            cmd_git = shlex.split('git log --pretty=format:"%H"')
+            local_gitlog = subprocess.check_output(cmd_git).decode().split()
+            log_dev_head = send_custom_sh_cmd("cat('.githash')"+';gc.collect()')
+            # print(log_dev_head)
+            log_info_list = log_dev_head.split()
+            if local_gitlog == log_info_list:
+                pass
+            else:
+                if len(git_diff_files['diff']) > 0:  # tracked changes
+                    cmd_git_l = shlex.split('git log --name-status  --pretty=format:"%H"')
+                    local_gitlog_files = subprocess.check_output(cmd_git_l).decode()
+                    commit_dict = {c.split('\n')[0] : [s for s in c.replace('\t', '\n').split()[1:]] for c in local_gitlog_files.split('\n\n')}
+                    for commit in commit_dict.keys():
+                        if commit not in log_info_list:
+                            if any([file not in git_diff_files['diff'] for file in commit_dict[commit][1::2]]):
+                                git_diff_files['diff'] += [file for file in commit_dict[commit][1::2] if file not in git_diff_files['diff']]
+                    git_diff_files['n_commits'] = int(len(local_gitlog) - len(log_info_list))
+
+                else:  # untracked changes (outside shell)
+                    cmd_git_l = shlex.split('git log --name-status  --pretty=format:"%H"')
+                    local_gitlog = subprocess.check_output(cmd_git_l).decode()
+                    commit_dict = {c.split('\n')[0] : [s for s in c.replace('\t', '\n').split()[1:]] for c in local_gitlog.split('\n\n')}
+                    for commit in commit_dict.keys():
+                        if commit not in log_info_list:
+                            git_diff_files['diff'] += commit_dict[commit][1::2]
+                            git_diff_files['n_commits'] += 1
+
+            # print(status_msg)
+
+        elif 'clone_dev' in cmd_git:
+            print('File/s to put:')
+            file = 'cwd'
+            if file == 'cwd':
+                files_to_put = [fl for fl in os.listdir() if os.path.isfile(fl) and not fl.startswith('.')]
+                for file in files_to_put:
+                    print('- {}'.format(file))
+                ble_htool.start_SOC()
+                for file in files_to_put:
+                    ble_htool.put(file)
+                    time.sleep(0.2)
+                # ssl_cp.ssl_repl("print('Done!')")
+                time.sleep(0.2)
+                ble_htool.stop_SOC()
+
+            dirs_to_sync = [fl for fl in os.listdir() if os.path.isdir(fl) and not fl.startswith('.')]
+            print('Dir/s to sync:')
+            for _dir in dirs_to_sync:
+                print('- {}'.format(_dir))
+                # print('Directory to sync: {}'.format(dir_to_sync))
+                d_sync_recursive(_dir, show_tree=True, root_sync_folder=_dir)
+
+        elif 'log' in cmd_git and 'dev' in cmd_git:
+            try:
+                if '-a' in cmd_git:
+                    # ble_cp.sh_repl("cat('.gitlog')"+';gc.collect()', follow=True)
+                    log_dev_head = send_custom_sh_cmd("cat('.gitlog')"+';gc.collect()')
+                    log_dev_head = log_dev_head.replace('\n ', '\n\n ').replace('\ncommit', '\n\ncommit')
+                    log_dev_head = log_dev_head.replace('\n\ncommit', '\n\n{}commit'.format(YELLOW)).replace('\nAuthor: ', '{}\nAuthor: '.format(CEND))
+                    last_commit_header = log_dev_head.split('\n')[0]
+                    if 'Traceback (most recent call last)' in last_commit_header:
+                        print('Device {} repo not initiated'.format(dev_platform))
+                    else:
+                        log_dev_head = log_dev_head.replace(last_commit_header, '')
+                        head_dev = ' ({}HEAD -> {}master{} {}'.format(BCYAN, CGREEN,CEND+YELLOW+','+BCYAN+CRED,dev_platform+CEND+YELLOW)
+                        commit = "{}{}){}".format(YELLOW, last_commit_header + head_dev, CEND)
+                        print(commit, end='')
+                        print(log_dev_head)
+                else:
+                    log_dev_head = send_custom_sh_cmd("head('.gitlog')"+';gc.collect()',
+                                                      long_string=True,
+                                                      rtn=True)
+                    # print(log_dev_head)
+                    log_info_list = log_dev_head.split('\ncommit ')[0].replace('\n    ', '\n\n    ', 1)
+                    # print(log_info_list)
+                    commit_body = '\n'.join(log_info_list.split('\n')[1:])
+                    commit_head = log_info_list.split('\n')[0]
+                    if 'Traceback (most recent call last)' in commit_head:
+                        print('Device {} repo not initiated'.format(dev_platform))
+                    else:
+                        head_dev = ' ({}HEAD -> {}master{} {}'.format(BCYAN, CGREEN,CEND+YELLOW+','+BCYAN+CRED,dev_platform+CEND+YELLOW)
+                        commit = "{}{}){}".format(YELLOW, commit_head + head_dev, CEND)
+                        print(commit)
+                        print(commit_body)
+            except Exception as e:
+                print('No commits in dev log to show')
+
+        elif 'log' in cmd_git and 'host' in cmd_git:
+            cmd_git = shlex.split('git log -1')
+            subprocess.call(cmd_git)
+
+        elif 'init' in cmd_git and 'dev' in cmd_git:
+            cwd_now = send_custom_sh_cmd("os.getcwd()")
+            if dev_platform == 'pyboard':
+                send_custom_sh_cmd("cd('/')")
+                send_custom_sh_cmd("cd('/flash')")
+            else:
+                send_custom_sh_cmd("cd('/')")
+            is_gitlog = "'.gitlog' in os.listdir()"
+            is_init = send_custom_sh_cmd(is_gitlog)
+            if is_init:
+                print('Device {} repo already initiated'.format(dev_platform))
+            else:
+                send_custom_sh_cmd("gitlog = open('.gitlog', 'w');gitlog.close()")
+                send_custom_sh_cmd("gitlog = open('.githash', 'w');gitlog.close()")
+                print('Device {} repo initiated succesfully!'.format(dev_platform))
+
+            send_custom_sh_cmd("cd('{}')".format(cwd_now))
+
+        elif 'status' in cmd_git and 'dev' in cmd_git:
+            cmd_git = shlex.split('git log --pretty=format:"%H"')
+            local_gitlog = subprocess.check_output(cmd_git).decode().split()
+            try:
+                log_dev_head = send_custom_sh_cmd("cat('.githash')"+';gc.collect()')
+                # print(log_dev_head)
+                log_info_list = log_dev_head.split()
+                if 'Traceback' in log_info_list and 'ENOENT' in log_info_list:
+                    log_info_list = []
+            except Exception as e:
+                log_info_list = []
+
+            if local_gitlog == log_info_list:
+                status_msg = "On branch master\nYour branch is up to date with '{}'.\n\nnothing to commit, working tree clean".format(dev_platform)
+            else:
+                if len(git_diff_files['diff']) > 0:  # tracked changes
+                    cmd_git_l = shlex.split('git log --name-status  --pretty=format:"%H"')
+                    local_gitlog_files = subprocess.check_output(cmd_git_l).decode()
+                    commit_dict = {c.split('\n')[0] : [s for s in c.replace('\t', '\n').split()[1:]] for c in local_gitlog_files.split('\n\n')}
+                    for commit in commit_dict.keys():
+                        if commit not in log_info_list:
+                            if any([file not in git_diff_files['diff'] for file in commit_dict[commit][1::2]]):
+                                git_diff_files['diff'] += [file for file in commit_dict[commit][1::2] if file not in git_diff_files['diff']]
+                    git_diff_files['n_commits'] = int(len(local_gitlog) - len(log_info_list))
+
+                    status_msg = "On branch master\nYour branch is ahead of '{0}' by {1} commit{2}.\n (use 'git push dev' to push your local commits to {0})\n\nnothing to commit, working tree clean".format(dev_platform, git_diff_files['n_commits'],
+                                ['s' if git_diff_files['n_commits'] > 1 else '' for i in range(1)][0])
+
+                else:  # untracked changes (outside shell)
+                    cmd_git_l = shlex.split('git log --name-status  --pretty=format:"%H"')
+                    local_gitlog = subprocess.check_output(cmd_git_l).decode()
+                    commit_dict = {c.split('\n')[0] : [s for s in c.replace('\t', '\n').split()[1:]] for c in local_gitlog.split('\n\n')}
+                    for commit in commit_dict.keys():
+                        if commit not in log_info_list:
+                            git_diff_files['diff'] += commit_dict[commit][1::2]
+                            git_diff_files['n_commits'] += 1
+
+                    status_msg = "On branch master\nYour branch is ahead of '{0}' by {1} commit{2} not tracked by upydev.\n (use 'git push dev' to push last commit changes to {0})\n\nnothing to commit, working tree clean".format(dev_platform, git_diff_files['n_commits'],
+                                ['s' if git_diff_files['n_commits'] > 1 else '' for i in range(1)][0])
+            print(status_msg)
+
+        elif 'repo' in cmd_git:
+            remote_repo_cmd = shlex.split('git remote -v')
+            git_repo = subprocess.check_output(remote_repo_cmd)
+            if git_repo != b'':
+                webbrowser.open(git_repo.split()[1].decode())
+            else:
+                print('git repository does not have a remote')
+
+        else:
+            subprocess.call(cmd_git)
+
+    if cmd_inp == 'tig':
+        try:
+            tigtool = 'tig'
+            tig_cmd = shlex.split(tigtool)
+            # old_action = signal.signal(signal.SIGINT, signal.SIG_IGN)
+            #
+            # def preexec_function(action=old_action):
+            #     signal.signal(signal.SIGINT, action)
+            try:
+                if '.git' in os.listdir():
+                    tig = subprocess.call(tig_cmd)
+                else:
+                    print('tig: Not a git repository')
+                # signal.signal(signal.SIGINT, old_action)
+            except Exception as e:
+                print(e)
+                print('tig not found')
+        except Exception as e:
+            print(e)
+            pass
 #
 #     if cmd_inp == 'upy-config':
 #         results_array = radiolist_dialog(
@@ -3618,17 +3631,55 @@ def toggle_local_path(event):
 # #                 print(CGREEN + 'INFO: ENCRYPTION ENABLED' + CEND)
 # #         # run_in_terminal(warning_sec)
 #
-#
-# @kb.add('c-p')
-# def toggle_status_ram_msg(event):
-#     "Toggle Right RAM status"
-#     if status_encryp_msg['Toggle']:
-#         if status_encryp_msg['S']:
-#             status_encryp_msg['S'] = False
-#         else:
-#             status_encryp_msg['S'] = True
-#
-#
+
+
+@kb.add('c-p')
+def toggle_status_ram_msg(event):
+    "Toggle Right RAM status"
+    if status_encryp_msg['Toggle']:
+        if status_encryp_msg['S']:
+            status_encryp_msg['S'] = False
+        else:
+            status_encryp_msg['S'] = True
+
+    async def run_kb():
+        ble_cp.dev.output = None
+        output = await ble_cp.as_sh_repl('from micropython import mem_info;mem_info()',
+                                silent=True, follow=False, rtn=True, rtn_resp=True)
+
+        if not mem_show_rp['show']:
+            mem_show_rp['show'] = True
+            mem_show_rp['call'] = True
+            RAM = output
+            try:
+                mem_info = RAM.replace('GC', '\nGC').replace('No', '\nNo').splitlines()[1]
+                mem = {elem.strip().split(':')[0]: int(elem.strip().split(':')[
+                                  1]) for elem in mem_info[4:].split(',')}
+                used_mem = mem['used']/1024
+                free_mem = mem['free']/1024
+                used_mem_s = "{:.3f} KB".format(used_mem)
+                free_mem_s = "{:.3f} KB".format(free_mem)
+                # set used and free
+                mem_show_rp['used'] = used_mem_s
+                mem_show_rp['free'] = free_mem_s
+                total_mem = mem['total']/1024
+                use_percent = round((used_mem/total_mem)*100, 2)
+                mem_show_rp['percent'] = use_percent
+            except Exception as e:
+                print(e)
+        else:
+            mem_show_rp['show'] = False
+
+        return None
+
+    async def f():
+        async with in_terminal():
+            await run_kb()
+
+    loop = asyncio.get_event_loop()
+    loop.create_task(f())
+
+
 # @kb.add('c-g')
 # def listen_SHELL_REPL(event):
 #     "Echo SHELL_REPL --> Active listening for timer/hardware interrupts"
@@ -3676,6 +3727,7 @@ while repl:
                                                                        autosuggest_is_on),
                                    key_bindings=kb, style=style_p,
                                    multiline=edit_mode['E'] or paste_flag['p'],
+                                   rprompt=get_rprompt,
                                    refresh_interval=0.2)
             status_encryp_msg['S'] = False
             status_encryp_msg['Toggle'] = True
