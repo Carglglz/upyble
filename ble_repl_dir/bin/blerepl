@@ -23,7 +23,7 @@ import argparse
 # import shutil
 # from upydev import upip_host
 from upyble.style_customs import one_darkStyle
-from datetime import datetime, date  # ,timedelta
+from datetime import datetime, date, timedelta
 from sys import platform as _platform
 # from cryptography.hazmat.backends import default_backend
 # from cryptography.hazmat.primitives.asymmetric import rsa
@@ -121,6 +121,158 @@ class BLE_REPL_server:
         # return output
 
 
+class BLE_TOOL:
+    def __init__(self, ble_sh_repl, port=None):
+        self.host = None
+        self.port = port
+        self.ble_cp = ble_sh_repl
+        self.buff = bytearray(1024*2)
+        self.bloc_progress = ["▏", "▎", "▍", "▌", "▋", "▊", "▉"]
+        self.columns, self.rows = os.get_terminal_size(0)
+        self.cnt_size = 65
+        self.bar_size = int((self.columns - self.cnt_size))
+        self.pb = False
+        self.wheel = ['|', '/', '-', "\\"]
+
+    def start_SOC(self):
+        # self.sh_srepl.dev.serial.close()
+        # self.serv_soc = Pyboard(self.sh_srepl.dev.serial_port)
+        pass
+
+    def stop_SOC(self):
+        # self.conn.close()
+        # self.serv_soc.close()
+        # self.sh_srepl.dev.serial.open()
+        # self.sh_srepl.sh_repl("\x03\x0d")
+        pass
+
+    def get_pb(self):
+        self.columns, self.rows = os.get_terminal_size(0)
+        if self.columns > self.cnt_size:
+            self.bar_size = int((self.columns - self.cnt_size))
+            self.pb = True
+        else:
+            self.bar_size = 1
+            self.pb = False
+
+    def do_pg_bar(self, index, wheel, nb_of_total, speed, time_e, loop_l,
+                  percentage, ett):
+        l_bloc = self.bloc_progress[loop_l]
+        if index == self.bar_size:
+            l_bloc = "█"
+        sys.stdout.write("\033[K")
+        print('▏{}▏{:>2}{:>5} % | {} | {:>5} KB/s | {}/{} s'.format("█" *index + l_bloc  + " "*((self.bar_size+1) - len("█" *index + l_bloc)),
+                                                                        wheel[index % 4],
+                                                                        int((percentage)*100),
+                                                                        nb_of_total, speed,
+                                                                        str(timedelta(seconds=time_e)).split('.')[0][2:],
+                                                                        str(timedelta(seconds=ett)).split('.')[0][2:]), end='\r')
+        sys.stdout.flush()
+
+    def get(self, src, chunk_size=256): # from Pyboard.py
+        self.get_pb()
+        cnt = 0
+        t_start = time.time()
+        # def_chunk = chunk
+        self.sh_srepl.sh_repl("os.stat('{}')[6]".format(src))
+        self.ble_cp.dev.get_output()
+        sz = self.ble_cp.dev.output
+        print("{}  [{:.2f} KB]".format(src, sz / 1024))
+        self.ble_cp.flush_conn()
+        # self.start_SOC()
+        self.ble_cp.sh_repl("f=open('%s','rb');r=f.read" % src)
+        with open(src, 'wb') as f:
+            pass
+        with open(src, 'ab') as f:
+            while True:
+                data = b''
+                self.ble_cp.sh_repl("print(r(%u))" % chunk_size)
+                if self.ble_cp.buff != b'':
+                    msg_b = self.ble_cp.buff.split(b'\n')[1:]
+                    try:
+                        msg_b[-1] = msg_b[-1].replace(b'>>> ', b'')
+                    except Exception as e:
+                        pass
+                    self.ble_cp.output = b'\n'.join([m for m in msg_b if m != b''])
+                try:
+                    data = eval(self.ble_cp.output.replace(b'\r', b''))
+                except Exception as e:
+                    print(e)
+                    data = b''
+                # print(type(data), data)
+                if data == b'':
+                    break
+                f.write(data)
+                cnt += len(data)
+                loop_index_f = (cnt/sz)*self.bar_size
+                loop_index = int(loop_index_f)
+                loop_index_l = int(round(loop_index_f-loop_index, 1)*6)
+                nb_of_total = "{:.2f}/{:.2f} KB".format(cnt/(1024), sz/(1024))
+                percentage = cnt / sz
+                t_elapsed = time.time() - t_start
+                t_speed = "{:^2.2f}".format((cnt/(1024))/t_elapsed)
+                ett = sz / (cnt / t_elapsed)
+                if self.pb:
+                    self.do_pg_bar(loop_index, self.wheel,
+                                   nb_of_total, t_speed, t_elapsed,
+                                   loop_index_l, percentage, ett)
+        print('\n')
+        self.ble_cp.sh_repl("f.close()")
+
+    def put(self, src, chunk_size=256, abs_path=True): # from Pyboard.py
+        self.get_pb()
+        sz = os.stat(src)[6]
+        cnt = 0
+        t_start = time.time()
+        if not abs_path:
+            src_ori = src
+            src = src.split('/')[-1]
+        print("{}  [{:.2f} KB]".format(src, sz / 1024))
+        self.ble_cp.sh_repl("f=open('%s','wb');w=f.write" % src, silent=True)
+        if not abs_path:
+            src = src_ori
+        with open(src, 'rb') as f:
+            while True:
+                data = f.read(chunk_size)
+                if not data:
+                    break
+                # if sys.version_info < (3,):
+                #     self.serv_soc.exec_('w(b' + repr(data) + ')')
+                # else:
+                #     self.serv_soc.exec_('w(' + repr(data) + ')')
+                # self.ble_cp.sh_repl('w(' + repr(data) + ')', assert_len=False)
+                # self.ble_cp.send_message('w(' + repr(data) + ')'+'\r')
+                if dev_platform == 'pyboard':
+                    self.ble_cp.sh_repl('w(' + repr(data) + ')', silent=True)
+                    # time.sleep(0.05)
+                else:
+                    if len(data) > 100:
+                        for i in range(0, len(data), 100):
+                            self.ble_cp.sh_repl('w(' + repr(data[i:i+100]) + ')',
+                                                silent=True)
+                    else:
+                        self.ble_cp.sh_repl('w(' + repr(data) + ')',
+                                            silent=True)
+                    # time.sleep(0.2)
+                # self.ble_cp.sh_repl('len('+ repr(data) + ')'+'\r')
+                # print(len(data))
+                cnt += len(data)
+                loop_index_f = (cnt/sz)*self.bar_size
+                loop_index = int(loop_index_f)
+                loop_index_l = int(round(loop_index_f-loop_index, 1)*6)
+                nb_of_total = "{:.2f}/{:.2f} KB".format(cnt/(1024), sz/(1024))
+                percentage = cnt / sz
+                t_elapsed = time.time() - t_start
+                t_speed = "{:^2.2f}".format((cnt/(1024))/t_elapsed)
+                ett = sz / (cnt / t_elapsed)
+                if self.pb:
+                    self.do_pg_bar(loop_index, self.wheel,
+                                   nb_of_total, t_speed, t_elapsed,
+                                   loop_index_l, percentage, ett)
+        print('\n')
+        self.ble_cp.sh_repl("f.close()", silent=True)
+        self.ble_cp.flush_conn()
+
 # ARGPARSE HERE TO ACCEPT TARGET AND PASSWORD
 parser = argparse.ArgumentParser()
 parser.add_argument("-t", help='device uuid, can be "auto" or @name', required=True)
@@ -188,6 +340,7 @@ basedev.banner()
 # ble_cp.flush()
 print('Use CTRL-x to exit, Use CTRL-s,ENTER to toggle shell/repl mode\nUse CTRL-k to see more info')
 ble_cp = BLE_REPL_server(dev=basedev, dev_id=unique_id)
+ble_htool = BLE_TOOL(ble_sh_repl=ble_cp)
 # basedev.disconnect()
 # PROMT SESSION CONFIGURATION
 
@@ -1313,62 +1466,62 @@ def custom_sh_cmd(cmd_inp):
 #             print(e)
 #             print('File not Found\nIndicate a file to get')
 #
-#     if cmd_inp.split(' ')[0] == 'put':
-#         try:
-#             print('File/s to put:')
-#             file = cmd_inp.split(' ')[1]
-#             if file == 'cwd':
-#                 files_to_put = [fl for fl in os.listdir() if os.path.isfile(fl)]
-#                 for file in files_to_put:
-#                     print('- {}'.format(file))
-#                 shr_htool.start_SOC()
-#                 for file in files_to_put:
-#                     shr_htool.put(file)
-#                     time.sleep(0.2)
-#                 # ble_cp.sh_repl("print('Done!')")
-#                 time.sleep(0.2)
-#                 shr_htool.stop_SOC()
-#             elif '*' in file:
-#                 files_to_put = [fl for fl in os.listdir() if os.path.isfile(fl)]
-#                 files_to_put_re = [fl for fl in files_to_put if file.replace('*', '') in fl]
-#                 for file in files_to_put_re:
-#                     print('- {}'.format(file))
-#                 shr_htool.start_SOC()
-#                 for file in files_to_put_re:
-#                     shr_htool.put(file)
-#                     time.sleep(0.2)
-#                 # ble_cp.sh_repl("print('Done!')")
-#                 time.sleep(0.2)
-#                 shr_htool.stop_SOC()
-#             elif len(cmd_inp.split(' ')) > 2:
-#                 files_to_put = cmd_inp.split(' ')[1:]
-#                 files_to_put_dir = [fl for fl in os.listdir() if os.path.isfile(fl) and fl in files_to_put]
-#                 if len(files_to_put_dir) != len(files_to_put):
-#                     print('One or more files not found in cwd')
-#                 else:
-#                     for file in files_to_put_dir:
-#                         print('- {}'.format(file))
-#                     shr_htool.start_SOC()
-#                     for file in files_to_put_dir:
-#                         shr_htool.put(file)
-#                         time.sleep(0.2)
-#                     # ble_cp.sh_repl("print('Done!')")
-#                     time.sleep(0.2)
-#                     shr_htool.stop_SOC()
-#             else:
-#                 files_to_put_dir = [fl for fl in os.listdir() if os.path.isfile(fl) and fl in [file]]
-#                 if len(files_to_put_dir) == 0:
-#                     print('File not Found\nIndicate a valid file to put')
-#                 else:
-#                     print('- {}'.format(file))
-#                     # shr_htool.start_SOC()
-#                     shr_htool.put(file)
-#                     # ble_cp.sh_repl("print('Done!')")
-#                     time.sleep(0.2)
-#                     shr_htool.stop_SOC()
-#         except Exception as e:
-#             # print(e)
-#             print('File not Found\nIndicate a valid file to put')
+    if cmd_inp.split(' ')[0] == 'put':
+        try:
+            print('File/s to put:')
+            file = cmd_inp.split(' ')[1]
+            if file == 'cwd':
+                files_to_put = [fl for fl in os.listdir() if os.path.isfile(fl)]
+                for file in files_to_put:
+                    print('- {}'.format(file))
+                ble_htool.start_SOC()
+                for file in files_to_put:
+                    ble_htool.put(file)
+                    time.sleep(0.2)
+                # ble_cp.sh_repl("print('Done!')")
+                time.sleep(0.2)
+                ble_htool.stop_SOC()
+            elif '*' in file:
+                files_to_put = [fl for fl in os.listdir() if os.path.isfile(fl)]
+                files_to_put_re = [fl for fl in files_to_put if file.replace('*', '') in fl]
+                for file in files_to_put_re:
+                    print('- {}'.format(file))
+                ble_htool.start_SOC()
+                for file in files_to_put_re:
+                    ble_htool.put(file)
+                    time.sleep(0.2)
+                # ble_cp.sh_repl("print('Done!')")
+                time.sleep(0.2)
+                ble_htool.stop_SOC()
+            elif len(cmd_inp.split(' ')) > 2:
+                files_to_put = cmd_inp.split(' ')[1:]
+                files_to_put_dir = [fl for fl in os.listdir() if os.path.isfile(fl) and fl in files_to_put]
+                if len(files_to_put_dir) != len(files_to_put):
+                    print('One or more files not found in cwd')
+                else:
+                    for file in files_to_put_dir:
+                        print('- {}'.format(file))
+                    ble_htool.start_SOC()
+                    for file in files_to_put_dir:
+                        ble_htool.put(file)
+                        time.sleep(0.2)
+                    # ble_cp.sh_repl("print('Done!')")
+                    time.sleep(0.2)
+                    ble_htool.stop_SOC()
+            else:
+                files_to_put_dir = [fl for fl in os.listdir() if os.path.isfile(fl) and fl in [file]]
+                if len(files_to_put_dir) == 0:
+                    print('File not Found\nIndicate a valid file to put')
+                else:
+                    print('- {}'.format(file))
+                    # ble_htool.start_SOC()
+                    ble_htool.put(file)
+                    # ble_cp.sh_repl("print('Done!')")
+                    time.sleep(0.2)
+                    ble_htool.stop_SOC()
+        except Exception as e:
+            # print(e)
+            print('File not Found\nIndicate a valid file to put')
 #
     if cmd_inp.split(' ')[0] == 'catl':
         try:

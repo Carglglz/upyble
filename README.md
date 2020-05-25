@@ -20,7 +20,7 @@
 
  🔸 (REPL works,  but some SHELL commands are still under development)
 
-🔺 There is a limit in the amount of output it can produce, so long lists or `cat` a big file will crash the BLE SHELL-REPL and possibly the device, which makes a reset almost inevitable.
+🔺 There is a limit in the amount of output it can produce, so long lists or `cat` a big file will freeze the BLE SHELL-REPL and possibly the device, which makes a reset almost inevitable.
 
 ------
 
@@ -29,7 +29,7 @@
 For Terminal BLE SHELL-REPL :
 
 First be sure that the <u>BLE REPL daemon is enabled</u> and running:
-  * 1) Put `ble_uart_peripheral.py` and `ble_uart_repl.py` in the device
+  * 1) Put `ble_advertising.py` ,`ble_uart_peripheral.py` and `ble_uart_repl.py` in the device
   * 2) Add these lines to `main.py`:
   ```
   import ble_uart_repl
@@ -89,7 +89,7 @@ This means that if the first argument is not a Mode keyword it assumes it is a '
 
 #### uPyble Mode/Tools:
 
-- **`upyble check`**: to check local machine Bluetooth characterisctics (MACOS only)
+- **`upyble check`**: to check local machine Bluetooth characterisctics
 
 - **`upyble config`**: save upy device settings (*see `-t`, `-g`)*, so the target uuid argument wont be required any more
 
