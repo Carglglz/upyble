@@ -7,16 +7,11 @@ import bluetooth
 import struct
 import time
 from ble_advertising import advertising_payload
-from machine import ADC
-from machine import Pin
-
+from machine import ADC, Pin, Timer
 from micropython import const
 
 _IRQ_CENTRAL_CONNECT = const(1 << 0)
 _IRQ_CENTRAL_DISCONNECT = const(1 << 1)
-
-bat = ADC(Pin(35))
-bat.atten(ADC.ATTN_11DB)
 
 # org.bluetooth.service.battery_service
 _BATT_SERV_UUID = bluetooth.UUID(0x180F)
@@ -34,8 +29,13 @@ _BATT_SERV_SERVICE = (
 _ADV_APPEARANCE_GENERIC_THERMOMETER = const(768)
 
 
-class BLETemperature:
+class BLEBattery:
     def __init__(self, ble, name="esp32-battery"):
+        self.bat = ADC(Pin(35))
+        self.bat.atten(ADC.ATTN_11DB)
+        self.bat_timer = Timer(-1)
+        self.irq_busy = False
+        self.i = 0
         self._ble = ble
         self._ble.active(True)
         self._ble.irq(handler=self._irq)
@@ -61,7 +61,7 @@ class BLETemperature:
     def read_batt_volt(self, notify=False):
         # Data is sint16 in degrees Celsius with a resolution of 0.01 degrees Celsius.
         # Write the local value, ready for a central to read.
-        bat_volt = ((bat.read()*2)/4095)*3.6
+        bat_volt = ((self.bat.read()*2)/4095)*3.6
         self._ble.gatts_write(self._handle, struct.pack(
             "<h", int(bat_volt * 100)))
         if notify:
@@ -72,18 +72,28 @@ class BLETemperature:
     def _advertise(self, interval_us=500000):
         self._ble.gap_advertise(interval_us, adv_data=self._payload)
 
+    def batt_callback(self, x):
+        if self.irq_busy:
+            return
+        else:
+            try:
+                self.irq_busy = True
+                self.i = (self.i + 1) % 10
+                self.read_batt_volt(notify=self.i == 0)
+                self.irq_busy = False
+            except Exception as e:
+                print(e)
+                self.irq_busy = False
 
-def batt_report():
-    ble = bluetooth.BLE()
-    ble_batt = BLETemperature(ble)
-    i = 0
-    while True:
-        # Write every second, notify every 10 seconds.
-        i = (i + 1) % 10
-        ble_batt.read_batt_volt(notify=i == 0)
-        # Random walk the temperature.
-        time.sleep_ms(1000)
+    def start_batt_bg(self, timeout=30000):
+        self.irq_busy = False
+        self.bat_timer.init(period=timeout, mode=Timer.PERIODIC,
+                            callback=self.batt_callback)
+
+    def stop_batt_bg(self):
+        self.bat_timer.deinit()
+        self.irq_busy = False
 
 
-if __name__ == "__main__":
-    batt_report()
+ble = bluetooth.BLE()
+ble_batt = BLEBattery(ble)
