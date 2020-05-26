@@ -4,6 +4,7 @@ import asyncio
 import struct
 from bleak import BleakClient
 from bleak import discover
+from upyble.chars import ble_char_dict
 import time
 import ast
 from array import array
@@ -138,7 +139,7 @@ class BASE_SBLE_DEVICE:
                     else:
                         print("\t[Characteristic] {0}: ({1}) | Name: {2}".format(
                             char.uuid, ",".join(
-                                char.properties), char.description))
+                                char.properties), ble_char_dict[char.uuid]))
 
                 if log:
                     for descriptor in char.descriptors:
@@ -413,9 +414,14 @@ class BASE_BLE_DEVICE:
                             char.uuid, ",".join(
                                 char.properties), NUS[char.uuid]))
                     else:
-                        print("\t[Characteristic] {0}: ({1}) | Name: {2}".format(
-                            char.uuid, ",".join(
-                                char.properties), char.description))
+                        try:
+                            print("\t[Characteristic] {0}: ({1}) | Name: {2}".format(
+                                char.uuid, ",".join(
+                                    char.properties), ble_char_dict[char.uuid]))
+                        except Exception as e:
+                            print("\t[Characteristic] {0}: ({1}) | Name: {2}".format(
+                                char.uuid, ",".join(
+                                    char.properties), char.description))
 
                 if log:
                     for descriptor in char.descriptors:

@@ -6,14 +6,16 @@ import os
 import argparse
 import json
 import upyble
-# import time
+import time
 import signal
 import shlex
+import logging
 # from binascii import hexlify
 import subprocess
 import argcomplete
 from argcomplete.completers import ChoicesCompleter
 from upyble.upybledevice import ble_scan, BASE_BLE_DEVICE
+from upyble.chars import ble_char_dict
 
 
 def see_global_devs():
@@ -43,6 +45,7 @@ helparg = '''
 - sconf:    to scan and configure a device that matches a name -d [NAME]
 - config:   to configure a device use -t to indicate UUID of the device
 - get_services: to get services of a device
+- follow:   to read from a service (read or notify), see -tm and -s
 - see: To get specific info about a devices group use -G option as "see -G [GROUP NAME]"
 - brepl: to enter the BLE SHELL-REPL
 - ble: to access brepl in a 'ssh' style command
@@ -66,9 +69,10 @@ it assumes it is a 'raw' upy command to send to the upy device
 """
 help_dv = "To point the command to a specific device saved in the global group"
 # UPY MODE KEYWORDS AND COMMANDS
-# TODO: READ / WRITE / SUBSCRIBE TO SERVICE
+# TODO: WRITE TO SERVICE
 keywords_mode = ['config', 'scan', 'tscan', 'sconf', 'get_services',
-                 'brepl', 'ble', 'make_group', 'mg_group', 'see', 'check']
+                 'brepl', 'ble', 'make_group', 'mg_group', 'see', 'check',
+                 'follow']
 
 parser = argparse.ArgumentParser(prog='upyble',
                                  description='Command line tool for Bluetooth Low Energy MicroPython devices',
@@ -83,6 +87,12 @@ parser.add_argument("-f", help='script or file name', required=False)
 parser.add_argument("-@", help=help_dv, required=False).completer = ChoicesCompleter(see_global_devs())
 parser.add_argument('-n', type=int, default=3, help='number of max scans to try')
 parser.add_argument('-d', default='auto', help='device to config if available')
+parser.add_argument('-s', help='service to write, read or receive notifications')
+parser.add_argument('-tm', type=int, default=5, help='read every "tm" seconds')
+parser.add_argument('-u',  help='units to display')
+parser.add_argument('-x',  default=1, type=int, help='scale data by factor [X]')
+parser.add_argument('-fmt',  default='<h', help='binary data format to unpack')
+
 parser.add_argument(
     "-st", help='shows target uuid if using config file', required=False, default=False, action='store_true')
 parser.add_argument(
@@ -472,3 +482,44 @@ elif args.m == 'ble':
             ble_repl(dev_uuid, usr=entry_point)
         except Exception as e:
             print('UUID INVALID or DEVICE NOT REACHABLE')
+
+# READ/FOLLOW SERVICE
+
+elif args.m == 'follow':
+    print('Following service: {}'.format(args.s))
+    bdev = BASE_BLE_DEVICE(args.t)
+    bdev.connect(n_tries=args.n, show_servs=True, log=False)
+    if not bdev.connected:
+        print('Device not reachable try again.')
+        sys.exit()
+    else:
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setLevel(logging.INFO)
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(asctime)s [%(name)s] %(message)s",
+            handlers=[handler])
+        log = logging.getLogger('upyble')
+        servs_keys = list(bdev.readables.keys())
+        servs_values = list(bdev.readables.values())
+        if args.s in servs_keys or args.s in servs_values:
+            while True:
+                try:
+                    if args.s in servs_keys:
+                        data = bdev.read_service(key=args.s, data_fmt=args.fmt)[0]
+                        log.info("{} [{}] : {:.2f} {}".format(args.s,
+                                                          ble_char_dict[bdev.readables[args.s]],
+                                                          data/args.x, args.u))
+                        time.sleep(args.tm)
+                    elif args.s in servs_values:
+                        data = bdev.read_service(uuid=args.s, data_fmt=args.fmt)[0]
+                        log.info("{} [{}] : {:.2f} {}".format(servs_keys[servs_values.index(args.s)],
+                                                     ble_char_dict[args.s],
+                                                     data/args.x, args.u))
+                        time.sleep(args.tm)
+                except Exception as e:
+                    print(e)
+                except KeyboardInterrupt:
+                    break
+        bdev.disconnect()
+        sys.exit()

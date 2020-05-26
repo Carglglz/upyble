@@ -248,9 +248,9 @@ class BLE_TOOL:
                     self.ble_cp.sh_repl('w(' + repr(data) + ')', silent=True)
                     # time.sleep(0.05)
                 else:
-                    if len(data) > 256:
-                        for i in range(0, len(data), 256):
-                            self.ble_cp.sh_repl('w(' + repr(data[i:i+256]) + ')',
+                    if len(data) > 100:
+                        for i in range(0, len(data), 100):
+                            self.ble_cp.sh_repl('w(' + repr(data[i:i+100]) + ')',
                                                 silent=True)
                     else:
                         self.ble_cp.sh_repl('w(' + repr(data) + ')',
