@@ -45,7 +45,7 @@ helparg = '''
 - sconf:    to scan and configure a device that matches a name -d [NAME]
 - config:   to configure a device use -t to indicate UUID of the device
 - get_services: to get services of a device
-- follow:   to read from a service (read or notify), see -tm and -s
+- follow:   to read from a service (see -s, -tm, -u and -x)
 - see: To get specific info about a devices group use -G option as "see -G [GROUP NAME]"
 - brepl: to enter the BLE SHELL-REPL
 - ble: to access brepl in a 'ssh' style command
@@ -89,8 +89,8 @@ parser.add_argument('-n', type=int, default=3, help='number of max scans to try'
 parser.add_argument('-d', default='auto', help='device to config if available')
 parser.add_argument('-s', help='service to write, read or receive notifications')
 parser.add_argument('-tm', type=int, default=5, help='read every "tm" seconds')
-parser.add_argument('-u',  help='units to display')
-parser.add_argument('-x',  default=1, type=int, help='scale data by factor [X]')
+parser.add_argument('-u', default='', help='units to display')
+parser.add_argument('-x',  default=1, type=int, help='scale down data by a factor [X]')
 parser.add_argument('-fmt',  default='<h', help='binary data format to unpack')
 
 parser.add_argument(

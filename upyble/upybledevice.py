@@ -39,265 +39,265 @@ if sys.platform == 'linux':
            "6e400002-b5a3-f393-e0a9-e50e24dcca9e": 'RX'}
 
 
-class BASE_SBLE_DEVICE:
-    def __init__(self, scan_dev, init=False):
-        # BLE
-        self.ble_client = None
-        self.UUID = scan_dev.address
-        self.name = scan_dev.name
-        self.rssi = scan_dev.rssi
-        self.connected = False
-        self.services = {}
-        self.readables = {}
-        self.writeables = {}
-        self.loop = asyncio.get_event_loop()
-        #
-        self.bytes_sent = 0
-        self.buff = b''
-        self.raw_buff = b''
-        self.prompt = b'>>> '
-        self.response = ''
-        self._kbi = '\x03'
-        self._banner = '\x02'
-        self._reset = '\x04'
-        self._traceback = b'Traceback (most recent call last):'
-        self._flush = b''
-        self.output = None
-        self.platform = None
-        #
-        if init:
-            self.connect()
-            # do connect
-
-    async def connect_client(self, n_tries=3):
-        n = 0
-        self.ble_client = BleakClient(self.UUID, loop=self.loop)
-        while n < n_tries:
-            try:
-                await self.ble_client.connect()
-                self.connected = await self.ble_client.is_connected()
-                if self.connected:
-                    print("Connected to: {}".format(self.UUID))
-                    break
-            except Exception as e:
-                print(e)
-                print('Trying again...')
-                time.sleep(1)
-                n += 1
-
-    async def disconnect_client(self):
-        await self.ble_client.disconnect()
-        self.connected = await self.ble_client.is_connected()
-        if not self.connected:
-            print("Disconnected succesfully")
-
-    def connect(self, n_tries=3):
-        self.loop.run_until_complete(self.connect_client(n_tries=n_tries))
-
-    def disconnect(self):
-        self.loop.run_until_complete(self.disconnect_client())
-
-    # SERVICES
-    def get_services(self, log=True):
-        for service in self.ble_client.services:
-            if service.description == 'Unknown' or service.uuid in list(NUS.keys()):
-                is_NUS = True
-                if log:
-                    print("[Service] {0}: {1}".format(
-                        service.uuid, NUS[service.uuid]))
-                self.services[NUS[service.uuid]] = {
-                    'UUID': service.uuid, 'CHARS': {}}
-            else:
-                is_NUS = False
-                if log:
-                    print("[Service] {0}: {1}".format(
-                        service.uuid, service.description))
-                self.services[service.description] = {
-                    'UUID': service.uuid, 'CHARS': {}}
-
-            for char in service.characteristics:
-                if is_NUS:
-                    if "read" in char.properties:
-                        self.readables[NUS[char.uuid]] = char.uuid
-                    if "write" in char.properties:
-                        self.writeables[NUS[char.uuid]] = char.uuid
-                    self.services[NUS[service.uuid]]['CHARS'][char.uuid] = {char.description: ",".join(
-                        char.properties), 'Descriptors': {descriptor.uuid: descriptor.handle for descriptor in char.descriptors}}
-                else:
-                    if "read" in char.properties:
-                        self.readables[service.description] = char.uuid
-                    if "write" in char.properties:
-                        self.writeables[service.description] = char.uuid
-
-                    self.services[service.description]['CHARS'][char.uuid] = {char.description: ",".join(
-                        char.properties), 'Descriptors': {descriptor.uuid: descriptor.handle for descriptor in char.descriptors}}
-                if log:
-                    if is_NUS:
-                        print("\t[Characteristic] {0}: ({1}) | Name: {2}".format(
-                            char.uuid, ",".join(
-                                char.properties), NUS[char.uuid]))
-                    else:
-                        print("\t[Characteristic] {0}: ({1}) | Name: {2}".format(
-                            char.uuid, ",".join(
-                                char.properties), ble_char_dict[char.uuid]))
-
-                if log:
-                    for descriptor in char.descriptors:
-                        print(
-                            "\t\t[Descriptor] {0}: (Handle: {1}) ".format(
-                                descriptor.uuid, descriptor.handle
-                            )
-                        )
-
-    async def as_read_service(self, uuid):
-        return bytes(await self.ble_client.read_gatt_char(uuid))
-
-    def read_service_raw(self, key=None, uuid=None):
-        if key is not None:
-            if key in list(self.readables.keys()):
-                data = self.loop.run_until_complete(
-                    self.as_read_service(self.readables[key]))
-                return data
-            else:
-                print('Service not readable')
-
-        else:
-            if uuid is not None:
-                if uuid in list(self.readables.values()):
-                    data = self.loop.run_until_complete(
-                        self.as_read_service(uuid))
-                    return data
-                else:
-                    print('Service not readable')
-
-    def read_service(self, key=None, uuid=None, data_fmt="<h"):
-        try:
-            return struct.unpack(data_fmt, self.read_service_raw(key=key, uuid=uuid))
-        except Exception as e:
-            print(e)
-
-    async def as_write_service(self, uuid, data):
-        await self.ble_client.write_gatt_char(uuid, data)
-
-    def write_service_raw(self, key=None, uuid=None, data=None):
-        if key is not None:
-            if key in list(self.writeables.keys()):
-                data = self.loop.run_until_complete(
-                    self.as_write_service(self.writeables[key], bytes(data)))
-                return data
-            else:
-                print('Service not writeable')
-
-        else:
-            if uuid is not None:
-                if uuid in list(self.writeables.values()):
-                    data = self.loop.run_until_complete(
-                        self.as_write_service(uuid, bytes(data)))
-                    return data
-                else:
-                    print('Service not writeable')
-
-    def write(self, cmd):
-        data = bytes(cmd, 'utf-8')
-        n_bytes = len(data)
-        self.write_service_raw(key='RX', data=data)
-        return n_bytes
-
-    def read_all(self):
-        try:
-            self.raw_buff = b''
-            while self.prompt not in self.raw_buff:
-                data = self.read_service_raw(key='TX')
-                self.raw_buff += data
-
-            return self.raw_buff
-        except Exception as e:
-            print(e)
-            return self.raw_buff
-
-    def flush(self):
-        flushed = 0
-        self.buff = self.read_all()
-        flushed += 1
-        self.buff = b''
-
-    def wr_cmd(self, cmd, silent=False, rtn=True, rtn_resp=False,
-               long_string=False):
-        self.output = None
-        self.response = ''
-        self.buff = b''
-        self.flush()
-        self.bytes_sent = self.write(cmd+'\r')
-        # time.sleep(0.1)
-        # self.buff = self.read_all()[self.bytes_sent:]
-        self.buff = self.read_all()
-        if self.buff == b'':
-            # time.sleep(0.1)
-            self.buff = self.read_all()
-        # print(self.buff)
-        # filter command
-        cmd_filt = bytes(cmd + '\r\n', 'utf-8')
-        self.buff = self.buff.replace(cmd_filt, b'', 1)
-        if self._traceback in self.buff:
-            long_string = True
-        if long_string:
-            self.response = self.buff.replace(b'\r', b'').replace(
-                b'\r\n>>> ', b'').replace(b'>>> ', b'').decode('utf-8', 'ignore')
-        else:
-            self.response = self.buff.replace(b'\r\n', b'').replace(
-                b'\r\n>>> ', b'').replace(b'>>> ', b'').decode('utf-8', 'ignore')
-        if not silent:
-            if self.response != '\n' and self.response != '':
-                print(self.response)
-            else:
-                self.response = ''
-        if rtn:
-            self.get_output()
-            if self.output == '\n' and self.output == '':
-                self.output = None
-            if self.output is None:
-                if self.response != '' and self.response != '\n':
-                    self.output = self.response
-        if rtn_resp:
-            return self.output
-
-    def kbi(self, silent=True, pipe=None):
-        if pipe is not None:
-            self.wr_cmd(self._kbi, silent=silent)
-            bf_output = self.response.split('Traceback')[0]
-            traceback = 'Traceback' + self.response.split('Traceback')[1]
-            if bf_output != '' and bf_output != '\n':
-                pipe(bf_output)
-            pipe(traceback, std='stderr')
-        else:
-            self.wr_cmd(self._kbi, silent=silent)
-
-    def banner(self, pipe=None):
-        self.wr_cmd(self._banner, silent=True, long_string=True)
-        if pipe is None:
-            print(self.response.replace('\n\n', '\n'))
-        else:
-            pipe(self.response.replace('\n\n', '\n'))
-
-    def get_output(self):
-        try:
-            self.output = ast.literal_eval(self.response)
-        except Exception as e:
-            if 'bytearray' in self.response:
-                try:
-                    self.output = bytearray(ast.literal_eval(
-                        self.response.strip().split('bytearray')[1]))
-                except Exception as e:
-                    pass
-            else:
-                if 'array' in self.response:
-                    try:
-                        arr = ast.literal_eval(
-                            self.response.strip().split('array')[1])
-                        self.output = array(arr[0], arr[1])
-                    except Exception as e:
-                        pass
-            pass
+# class BASE_SBLE_DEVICE:
+#     def __init__(self, scan_dev, init=False):
+#         # BLE
+#         self.ble_client = None
+#         self.UUID = scan_dev.address
+#         self.name = scan_dev.name
+#         self.rssi = scan_dev.rssi
+#         self.connected = False
+#         self.services = {}
+#         self.readables = {}
+#         self.writeables = {}
+#         self.loop = asyncio.get_event_loop()
+#         #
+#         self.bytes_sent = 0
+#         self.buff = b''
+#         self.raw_buff = b''
+#         self.prompt = b'>>> '
+#         self.response = ''
+#         self._kbi = '\x03'
+#         self._banner = '\x02'
+#         self._reset = '\x04'
+#         self._traceback = b'Traceback (most recent call last):'
+#         self._flush = b''
+#         self.output = None
+#         self.platform = None
+#         #
+#         if init:
+#             self.connect()
+#             # do connect
+#
+#     async def connect_client(self, n_tries=3):
+#         n = 0
+#         self.ble_client = BleakClient(self.UUID, loop=self.loop)
+#         while n < n_tries:
+#             try:
+#                 await self.ble_client.connect()
+#                 self.connected = await self.ble_client.is_connected()
+#                 if self.connected:
+#                     print("Connected to: {}".format(self.UUID))
+#                     break
+#             except Exception as e:
+#                 print(e)
+#                 print('Trying again...')
+#                 time.sleep(1)
+#                 n += 1
+#
+#     async def disconnect_client(self):
+#         await self.ble_client.disconnect()
+#         self.connected = await self.ble_client.is_connected()
+#         if not self.connected:
+#             print("Disconnected succesfully")
+#
+#     def connect(self, n_tries=3):
+#         self.loop.run_until_complete(self.connect_client(n_tries=n_tries))
+#
+#     def disconnect(self):
+#         self.loop.run_until_complete(self.disconnect_client())
+#
+#     # SERVICES
+#     def get_services(self, log=True):
+#         for service in self.ble_client.services:
+#             if service.description == 'Unknown' or service.uuid in list(NUS.keys()):
+#                 is_NUS = True
+#                 if log:
+#                     print("[Service] {0}: {1}".format(
+#                         service.uuid, NUS[service.uuid]))
+#                 self.services[NUS[service.uuid]] = {
+#                     'UUID': service.uuid, 'CHARS': {}}
+#             else:
+#                 is_NUS = False
+#                 if log:
+#                     print("[Service] {0}: {1}".format(
+#                         service.uuid, service.description))
+#                 self.services[service.description] = {
+#                     'UUID': service.uuid, 'CHARS': {}}
+#
+#             for char in service.characteristics:
+#                 if is_NUS:
+#                     if "read" in char.properties:
+#                         self.readables[NUS[char.uuid]] = char.uuid
+#                     if "write" in char.properties:
+#                         self.writeables[NUS[char.uuid]] = char.uuid
+#                     self.services[NUS[service.uuid]]['CHARS'][char.uuid] = {char.description: ",".join(
+#                         char.properties), 'Descriptors': {descriptor.uuid: descriptor.handle for descriptor in char.descriptors}}
+#                 else:
+#                     if "read" in char.properties:
+#                         self.readables[service.description] = char.uuid
+#                     if "write" in char.properties:
+#                         self.writeables[service.description] = char.uuid
+#
+#                     self.services[service.description]['CHARS'][char.uuid] = {char.description: ",".join(
+#                         char.properties), 'Descriptors': {descriptor.uuid: descriptor.handle for descriptor in char.descriptors}}
+#                 if log:
+#                     if is_NUS:
+#                         print("\t[Characteristic] {0}: ({1}) | Name: {2}".format(
+#                             char.uuid, ",".join(
+#                                 char.properties), NUS[char.uuid]))
+#                     else:
+#                         print("\t[Characteristic] {0}: ({1}) | Name: {2}".format(
+#                             char.uuid, ",".join(
+#                                 char.properties), ble_char_dict[char.uuid]))
+#
+#                 if log:
+#                     for descriptor in char.descriptors:
+#                         print(
+#                             "\t\t[Descriptor] {0}: (Handle: {1}) ".format(
+#                                 descriptor.uuid, descriptor.handle
+#                             )
+#                         )
+#
+#     async def as_read_service(self, uuid):
+#         return bytes(await self.ble_client.read_gatt_char(uuid))
+#
+#     def read_service_raw(self, key=None, uuid=None):
+#         if key is not None:
+#             if key in list(self.readables.keys()):
+#                 data = self.loop.run_until_complete(
+#                     self.as_read_service(self.readables[key]))
+#                 return data
+#             else:
+#                 print('Service not readable')
+#
+#         else:
+#             if uuid is not None:
+#                 if uuid in list(self.readables.values()):
+#                     data = self.loop.run_until_complete(
+#                         self.as_read_service(uuid))
+#                     return data
+#                 else:
+#                     print('Service not readable')
+#
+#     def read_service(self, key=None, uuid=None, data_fmt="<h"):
+#         try:
+#             return struct.unpack(data_fmt, self.read_service_raw(key=key, uuid=uuid))
+#         except Exception as e:
+#             print(e)
+#
+#     async def as_write_service(self, uuid, data):
+#         await self.ble_client.write_gatt_char(uuid, data)
+#
+#     def write_service_raw(self, key=None, uuid=None, data=None):
+#         if key is not None:
+#             if key in list(self.writeables.keys()):
+#                 data = self.loop.run_until_complete(
+#                     self.as_write_service(self.writeables[key], bytes(data)))
+#                 return data
+#             else:
+#                 print('Service not writeable')
+#
+#         else:
+#             if uuid is not None:
+#                 if uuid in list(self.writeables.values()):
+#                     data = self.loop.run_until_complete(
+#                         self.as_write_service(uuid, bytes(data)))
+#                     return data
+#                 else:
+#                     print('Service not writeable')
+#
+#     def write(self, cmd):
+#         data = bytes(cmd, 'utf-8')
+#         n_bytes = len(data)
+#         self.write_service_raw(key='RX', data=data)
+#         return n_bytes
+#
+#     def read_all(self):
+#         try:
+#             self.raw_buff = b''
+#             while self.prompt not in self.raw_buff:
+#                 data = self.read_service_raw(key='TX')
+#                 self.raw_buff += data
+#
+#             return self.raw_buff
+#         except Exception as e:
+#             print(e)
+#             return self.raw_buff
+#
+#     def flush(self):
+#         flushed = 0
+#         self.buff = self.read_all()
+#         flushed += 1
+#         self.buff = b''
+#
+#     def wr_cmd(self, cmd, silent=False, rtn=True, rtn_resp=False,
+#                long_string=False):
+#         self.output = None
+#         self.response = ''
+#         self.buff = b''
+#         self.flush()
+#         self.bytes_sent = self.write(cmd+'\r')
+#         # time.sleep(0.1)
+#         # self.buff = self.read_all()[self.bytes_sent:]
+#         self.buff = self.read_all()
+#         if self.buff == b'':
+#             # time.sleep(0.1)
+#             self.buff = self.read_all()
+#         # print(self.buff)
+#         # filter command
+#         cmd_filt = bytes(cmd + '\r\n', 'utf-8')
+#         self.buff = self.buff.replace(cmd_filt, b'', 1)
+#         if self._traceback in self.buff:
+#             long_string = True
+#         if long_string:
+#             self.response = self.buff.replace(b'\r', b'').replace(
+#                 b'\r\n>>> ', b'').replace(b'>>> ', b'').decode('utf-8', 'ignore')
+#         else:
+#             self.response = self.buff.replace(b'\r\n', b'').replace(
+#                 b'\r\n>>> ', b'').replace(b'>>> ', b'').decode('utf-8', 'ignore')
+#         if not silent:
+#             if self.response != '\n' and self.response != '':
+#                 print(self.response)
+#             else:
+#                 self.response = ''
+#         if rtn:
+#             self.get_output()
+#             if self.output == '\n' and self.output == '':
+#                 self.output = None
+#             if self.output is None:
+#                 if self.response != '' and self.response != '\n':
+#                     self.output = self.response
+#         if rtn_resp:
+#             return self.output
+#
+#     def kbi(self, silent=True, pipe=None):
+#         if pipe is not None:
+#             self.wr_cmd(self._kbi, silent=silent)
+#             bf_output = self.response.split('Traceback')[0]
+#             traceback = 'Traceback' + self.response.split('Traceback')[1]
+#             if bf_output != '' and bf_output != '\n':
+#                 pipe(bf_output)
+#             pipe(traceback, std='stderr')
+#         else:
+#             self.wr_cmd(self._kbi, silent=silent)
+#
+#     def banner(self, pipe=None):
+#         self.wr_cmd(self._banner, silent=True, long_string=True)
+#         if pipe is None:
+#             print(self.response.replace('\n\n', '\n'))
+#         else:
+#             pipe(self.response.replace('\n\n', '\n'))
+#
+#     def get_output(self):
+#         try:
+#             self.output = ast.literal_eval(self.response)
+#         except Exception as e:
+#             if 'bytearray' in self.response:
+#                 try:
+#                     self.output = bytearray(ast.literal_eval(
+#                         self.response.strip().split('bytearray')[1]))
+#                 except Exception as e:
+#                     pass
+#             else:
+#                 if 'array' in self.response:
+#                     try:
+#                         arr = ast.literal_eval(
+#                             self.response.strip().split('array')[1])
+#                         self.output = array(arr[0], arr[1])
+#                     except Exception as e:
+#                         pass
+#             pass
 
 
 class BASE_BLE_DEVICE:
@@ -568,9 +568,6 @@ class BASE_BLE_DEVICE:
         if rtn_buff:
             return self.raw_buff
 
-    async def test_this(self):
-        print('This is a test')
-
     def write_read(self, data='', follow=False, kb=False):
         if not follow:
             if not kb:
@@ -774,3 +771,8 @@ class BASE_BLE_DEVICE:
                     except Exception as e:
                         pass
             pass
+
+
+class BLE_DEVICE(BASE_BLE_DEVICE):
+    def __init__(self, scan_dev, init=False, name=None, lenbuff=100):
+        super().__init__(scan_dev, init=init, name=name, lenbuff=lenbuff)
