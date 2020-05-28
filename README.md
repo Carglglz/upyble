@@ -28,7 +28,7 @@
 
 For Terminal BLE SHELL-REPL :
 
-First be sure that the BLE REPL daemon is enabled and running:
+First be sure that the **BLE REPL daemon is enabled** and running:
   * 1) Put `ble_advertising.py` ,`ble_uart_peripheral.py` and `ble_uart_repl.py` in the device
   * 2) Add these lines to `main.py`:
   ```
