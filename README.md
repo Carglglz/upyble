@@ -13,14 +13,13 @@
 ### Features:
 
 * Command line wireless communication/control of MicroPython devices.
-
 * Custom commands to automate communication/control
-
 * Command line autocompletion
-
 * Terminal BLE SHELL-REPL 🔸🔺
-  
-  🔸 (REPL works,  but some SHELL commands are still under development)
+
+
+
+🔸 (REPL works,  but some SHELL commands are still under development)
 
 🔺 There is a limit in the amount of output it can produce, so long lists or `cat` a big file will freeze the BLE SHELL-REPL and possibly the device, which makes a reset almost inevitable.
 
@@ -35,7 +34,7 @@ First be sure that the **BLE REPL daemon is enabled** and running:
 * 1) Put `ble_advertising.py` ,`ble_uart_peripheral.py` and `ble_uart_repl.py` in the device
 
 * 2) Add these lines to `main.py`:
-     
+  
      ```python
      import ble_uart_repl
      ble_uart_repl.start()
@@ -98,7 +97,7 @@ This means that if the first argument is not a Mode keyword it assumes it is a '
 - **`upyble tscan`**: to scan for BLE devices, results with table format
 - **`upyble sconf`**: to scan and configure a device that matches a name `-d [NAME]`
 - **`upyble get_services`**: to get services of a device
-- **`upyble follow`**:   to read from a service (see `-s`, `-tm`, `-u` and `-x`) , e.g : `upyble follow -s "Battery Service" `
+- **`upyble follow`**:   to read from a service (see `-s`, `-tm`, `-u` , `fmt` and `-x`) , e.g : `upyble follow -s "Battery Service" `
 - **`upyble see`**: to get specific info about a devices group use `-G` option as `see -G [GROUP NAME]`
 - **`upyble brepl`**: to enter the BLE SHELL-REPL
 - **`upyble ble@[DEVICE]`**: to access brepl in a 'ssh' style command if a device is stored in a global group called `UPYBLE_G` (this needs to be created first doing e.g. `$ upyble make_group -g -f UPYBLE_G -devs foo_device UUID`) The device can be accessed as `$ upyble ble@foo_device` or redirect any command as e.g. `$ upyble get_services -@foo_device`.
