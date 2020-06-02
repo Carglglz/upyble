@@ -349,6 +349,7 @@ class BASE_BLE_DEVICE:
                 await self.ble_client.connect()
                 self.connected = await self.ble_client.is_connected()
                 if self.connected:
+                    self.name = self.ble_client._device_info.name()
                     if log:
                         print("Connected to: {}".format(self.UUID))
                     break
@@ -370,6 +371,9 @@ class BASE_BLE_DEVICE:
         self.loop.run_until_complete(self.connect_client(n_tries=n_tries,
                                                          log=log))
         self.get_services(log=show_servs)
+
+    def is_connected(self):
+        return self.loop.run_until_complete(self.ble_client.is_connected())
 
     def disconnect(self, log=True):
         self.loop.run_until_complete(self.disconnect_client(log=log))

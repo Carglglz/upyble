@@ -499,7 +499,10 @@ elif args.m == 'follow':
             level=logging.INFO,
             format="%(asctime)s [%(name)s] %(message)s",
             handlers=[handler])
-        log = logging.getLogger('upyble')
+        if bdev.name is not None:
+            log = logging.getLogger('upyble@{}'.format(bdev.name))
+        else:
+            log = logging.getLogger('upyble')
         servs_keys = list(bdev.readables.keys())
         servs_values = list(bdev.readables.values())
         if args.s in servs_keys or args.s in servs_values:

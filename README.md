@@ -10,15 +10,17 @@
 
 ⚠️ ***Keep in mind that this project is in ALPHA state, sometimes, some commands may not work/return anything*** ⚠️
 
-
 ### Features:
 
 * Command line wireless communication/control of MicroPython devices.
-* Custom commands to automate communication/control
-* Command line autocompletion
-* Terminal BLE SHELL-REPL 🔸🔺
 
- 🔸 (REPL works,  but some SHELL commands are still under development)
+* Custom commands to automate communication/control
+
+* Command line autocompletion
+
+* Terminal BLE SHELL-REPL 🔸🔺
+  
+  🔸 (REPL works,  but some SHELL commands are still under development)
 
 🔺 There is a limit in the amount of output it can produce, so long lists or `cat` a big file will freeze the BLE SHELL-REPL and possibly the device, which makes a reset almost inevitable.
 
@@ -29,12 +31,15 @@
 For Terminal BLE SHELL-REPL :
 
 First be sure that the **BLE REPL daemon is enabled** and running:
-  * 1) Put `ble_advertising.py` ,`ble_uart_peripheral.py` and `ble_uart_repl.py` in the device
-  * 2) Add these lines to `main.py`:
-  ```
-  import ble_uart_repl
-  ble_uart_repl.start()
-  ```
+
+* 1) Put `ble_advertising.py` ,`ble_uart_peripheral.py` and `ble_uart_repl.py` in the device
+
+* 2) Add these lines to `main.py`:
+     
+     ```python
+     import ble_uart_repl
+     ble_uart_repl.start()
+     ```
 
 *These scripts are in upybleutils directory. (Originals from [MicroPython repo bluetooth examples](https://github.com/micropython/micropython/tree/master/examples/bluetooth))*
 
@@ -45,6 +50,7 @@ First be sure that the **BLE REPL daemon is enabled** and running:
 #### Finding BLE devices:
 
 Use `$ upyble scan` or `$ upyble tscan` for table output format.
+
 ```
 $ upyble tscan
 Scanning...
@@ -55,27 +61,24 @@ BLE device/s found: 1
  esp32-30aea4233564  |   9998175F-9A91-4CA2-B5EA-482AFC3453B9   |   -68.0    |
 ```
 
-
 #### Create a configuration file:
 
 upyble will use local working directory configuration unless it does not find any or manually indicated with `-g` option.
 
 - To save configuration in working directory: `$ upyble config -t [UPYDEVICE UUID]`
-
+  
   e.g:
-
+  
   `$ upyble config -t 9998175F-9A91-4CA2-B5EA-482AFC3453B9 `
-
 * To save configuration globally use -g flag: `$ upyble config -t [UPYDEVICE UUID]  -g`
-
+  
   e.g.
-
+  
   `$ upyble config -t 9998175F-9A91-4CA2-B5EA-482AFC3453B9 -g `
 
 ------
 
-
-#### uPyble Usage:
+### uPyble Usage:
 
 Usage:
 
