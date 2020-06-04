@@ -4,7 +4,11 @@ import asyncio
 import struct
 from bleak import BleakClient
 from bleak import discover
-from upyble.chars import ble_char_dict
+from upyble.chars import ble_char_dict, ble_char_dict_rev
+from upyble.servs import ble_services_dict, ble_services_dict_rev
+from upyble.appearances import ble_appearances_dict, ble_appearances_dict_rev
+import struct
+import uuid as U_uuid
 import time
 import ast
 from array import array
@@ -402,16 +406,24 @@ class BASE_BLE_DEVICE:
                         self.readables[NUS[char.uuid]] = char.uuid
                     if "write" in char.properties:
                         self.writeables[NUS[char.uuid]] = char.uuid
-                    self.services[NUS[service.uuid]]['CHARS'][char.uuid] = {char.description: ",".join(
-                        char.properties), 'Descriptors': {descriptor.uuid: descriptor.handle for descriptor in char.descriptors}}
+                    try:
+                        self.services[NUS[service.uuid]]['CHARS'][char.uuid] = {NUS[char.uuid]: ",".join(
+                            char.properties), 'Descriptors': {descriptor.uuid: descriptor.handle for descriptor in char.descriptors}}
+                    except Exception as e:
+
+                        self.services[NUS[service.uuid]]['CHARS'][char.uuid] = {char.description: ",".join(
+                            char.properties), 'Descriptors': {descriptor.uuid: descriptor.handle for descriptor in char.descriptors}}
                 else:
                     if "read" in char.properties:
                         self.readables[service.description] = char.uuid
                     if "write" in char.properties:
                         self.writeables[service.description] = char.uuid
-
-                    self.services[service.description]['CHARS'][char.uuid] = {char.description: ",".join(
-                        char.properties), 'Descriptors': {descriptor.uuid: descriptor.handle for descriptor in char.descriptors}}
+                    try:
+                        self.services[service.description]['CHARS'][char.uuid] = {ble_char_dict[char.uuid]: ",".join(
+                            char.properties), 'Descriptors': {descriptor.uuid: descriptor.handle for descriptor in char.descriptors}}
+                    except Exception as e:
+                        self.services[service.description]['CHARS'][char.uuid] = {char.description: ",".join(
+                            char.properties), 'Descriptors': {descriptor.uuid: descriptor.handle for descriptor in char.descriptors}}
                 if log:
                     if is_NUS:
                         print("\t[Characteristic] {0}: ({1}) | Name: {2}".format(
@@ -780,3 +792,24 @@ class BASE_BLE_DEVICE:
 class BLE_DEVICE(BASE_BLE_DEVICE):
     def __init__(self, scan_dev, init=False, name=None, lenbuff=100):
         super().__init__(scan_dev, init=init, name=name, lenbuff=lenbuff)
+        self.appearance = 0
+        self.get_appearance()
+        self.MAC_addrs = ''
+        self.get_MAC_addrs()
+
+    def get_appearance(self):
+        if 'Device Information' in self.services.keys():
+            if '2A01' in self.services['Device Information']['CHARS'].keys():
+                appear_code = self.read_service(key='Device Information', data_fmt='h')[0]
+                self.appearance = ble_appearances_dict[appear_code]
+        else:
+            self.appearance = ble_appearances_dict[self.appearance]
+
+    def get_MAC_addrs(self):
+        if '-' in self.UUID:
+            byteaddr = U_uuid.UUID(self.UUID)
+            hexaddr = hex(sum([val for val in struct.unpack("I"*4, byteaddr.bytes)])).replace('0', '', 1)
+            MAC_addr = 'uu:'+':'.join([hexaddr[i:i+2] for i in range(0, len(hexaddr), 2)])
+            self.MAC_addrs = MAC_addr
+        else:
+            self.MAC_addrs = self.UUID

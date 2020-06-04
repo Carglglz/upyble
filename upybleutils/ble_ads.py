@@ -14,9 +14,9 @@ from init_ADS import MY_ADS, i2c
 _IRQ_CENTRAL_CONNECT = const(1 << 0)
 _IRQ_CENTRAL_DISCONNECT = const(1 << 1)
 
-# org.bluetooth.service.analog
+# org.bluetooth.service.enviromental_sensing
 _ENV_SERV_UUID = bluetooth.UUID(0x181A)
-# org.bluetooth.characteristic.temperature
+# org.bluetooth.characteristic.analog
 _ANALOG_CHAR = (
     bluetooth.UUID(0x2A58),
     bluetooth.FLAG_READ | bluetooth.FLAG_NOTIFY,
@@ -26,12 +26,23 @@ _ADS_SERV_SERVICE = (
     (_ANALOG_CHAR,),
 )
 
+# org.bluetooth.service.device_information
+_DEV_INF_SERV_UUID = bluetooth.UUID(0x180A)
+# org.bluetooth.characteristic.analog
+_APPEAR_CHAR = (
+    bluetooth.UUID(0x2A01),
+    bluetooth.FLAG_READ
+)
+_DEV_INF_SERV_SERVICE = (
+    _DEV_INF_SERV_UUID,
+    (_APPEAR_CHAR,),
+)
 # org.bluetooth.characteristic.gap.appearance.xml
 _ADV_APPEARANCE_HID_DIGITAL_PEN = const(967)
 
 
 class BLE_ADS:
-    def __init__(self, ble, name="esp32-voltimeter"):
+    def __init__(self, ble, name="esp32-voltmeter"):
         self.ads_dev = MY_ADS(ADS1115, i2c)
         self.init_ads()
         self.ads_timer = Timer(-1)
@@ -41,13 +52,15 @@ class BLE_ADS:
         self._ble = ble
         self._ble.active(True)
         self._ble.irq(handler=self._irq)
-        ((self._handle,),) = self._ble.gatts_register_services((_ADS_SERV_SERVICE,))
+        ((self._handle,), (self._appear,)) = self._ble.gatts_register_services((_ADS_SERV_SERVICE, _DEV_INF_SERV_SERVICE))
         self._connections = set()
         self._payload = advertising_payload(
             name=name, services=[
                 _ENV_SERV_UUID], appearance=_ADV_APPEARANCE_HID_DIGITAL_PEN
         )
         self._advertise()
+        self._ble.gatts_write(self._appear, struct.pack(
+            "h", _ADV_APPEARANCE_HID_DIGITAL_PEN))
 
     def _irq(self, event, data):
         # Track connections so we can send notifications.
@@ -113,4 +126,4 @@ class BLE_ADS:
 ble = bluetooth.BLE()
 ble_ads = BLE_ADS(ble)
 ble_ads.start_volt_bg()
-print('BLE ADS Voltimeter ready!')
+print('BLE ADS Voltmeter ready!')

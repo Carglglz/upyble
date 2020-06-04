@@ -15,7 +15,9 @@ import subprocess
 import argcomplete
 from argcomplete.completers import ChoicesCompleter
 from upyble.upybledevice import ble_scan, BASE_BLE_DEVICE
-from upyble.chars import ble_char_dict
+from upyble.chars import ble_char_dict, ble_char_dict_rev
+from upyble.servs import ble_services_dict, ble_services_dict_rev
+from upyble.appearances import ble_appearances_dict, ble_appearances_dict_rev
 
 
 def see_global_devs():
@@ -45,6 +47,12 @@ helparg = '''
 - sconf:    to scan and configure a device that matches a name -d [NAME]
 - config:   to configure a device use -t to indicate UUID of the device
 - get_services: to get services of a device
+- get_stag: to get service tag from a service code, use -scode to indicate the code
+- get_scode: to get service code from a service tag, use -stag to indicate the tag
+- get_ctag: to get characteristic tag from characteristic code, use -ccode to indicate the code
+- get_ccode: to get characteristic code from a characteristic tag, use -ctag to indicate the tag
+- get_aptag: to get appearance tag from an appearance code, use -apcode to indicate the code
+- get_apcode: to get appearance code from an appearance tag, use -aptag to indicate the tag
 - follow:   to read from a service (see -s, -tm, -u and -x)
 - see: To get specific info about a devices group use -G option as "see -G [GROUP NAME]"
 - brepl: to enter the BLE SHELL-REPL
@@ -72,7 +80,8 @@ help_dv = "To point the command to a specific device saved in the global group"
 # TODO: WRITE TO SERVICE
 keywords_mode = ['config', 'scan', 'tscan', 'sconf', 'get_services',
                  'brepl', 'ble', 'make_group', 'mg_group', 'see', 'check',
-                 'follow']
+                 'follow', 'get_stag', 'get_scode', 'get_ctag',
+                 'get_ccode', 'get_aptag', 'get_apcode']
 
 parser = argparse.ArgumentParser(prog='upyble',
                                  description='Command line tool for Bluetooth Low Energy MicroPython devices',
@@ -92,6 +101,12 @@ parser.add_argument('-tm', type=int, default=5, help='read every "tm" seconds')
 parser.add_argument('-u', default='', help='units to display')
 parser.add_argument('-x',  default=1, type=int, help='scale down data by a factor [X]')
 parser.add_argument('-fmt',  default='<h', help='binary data format to unpack')
+parser.add_argument('-stag',  help='Service tag; e.g "Environmental Sensing"').completer = ChoicesCompleter(ble_services_dict_rev.keys())
+parser.add_argument('-scode',  help='Service code; e.g "181A"').completer = ChoicesCompleter(ble_services_dict.keys())
+parser.add_argument('-ctag',  help='Characteristic tag; e.g "Appearance"').completer = ChoicesCompleter(ble_char_dict_rev.keys())
+parser.add_argument('-ccode',  help='Characteristic code; e.g "2A01"').completer = ChoicesCompleter(ble_char_dict.keys())
+parser.add_argument('-aptag',  help='Appearance tag; e.g "GENERIC_THERMOMETER"').completer = ChoicesCompleter(ble_appearances_dict_rev.keys())
+parser.add_argument('-apcode',  help='Appearance code; e.g "768"').completer = ChoicesCompleter(ble_appearances_dict.keys())
 
 parser.add_argument(
     "-st", help='shows target uuid if using config file', required=False, default=False, action='store_true')
@@ -239,8 +254,17 @@ if args.m == 'scan':
     else:
         print('BLE device/s found: {}'.format(len(devs)))
         for dev in devs:
-            print("NAME: {}, UUID: {}, RSSI: {} dBm".format(dev.name, dev.address,
-                                                      dev.rssi))
+            services = ['']
+            if hasattr(dev, 'metadata'):
+                if isinstance(dev.metadata, dict):
+                    if 'uuids' in dev.metadata.keys():
+                        try:
+                            services = [ble_services_dict[serv.upper()] for serv in dev.metadata['uuids']]
+                        except Exception as e:
+                            services = ['']
+
+            print("NAME: {}, UUID: {}, RSSI: {} dBm, Services: {}".format(dev.name, dev.address,
+                                                      dev.rssi, ','.join(services)))
     sys.exit()
 
 # TSCAN
@@ -262,13 +286,21 @@ if args.m == 'tscan':
         print('No BLE device found')
     else:
         print('BLE device/s found: {}'.format(len(devs)))
-        print('=' * 78)
-        print('{0:^20} | {1:^40} | {2:^10} |'.format(
-            'NAME', 'UUID', 'RSSI (dBm)'))
+        print('=' * 121)
+        print('{0:^20} | {1:^40} | {2:^10} | {3:^40} |'.format(
+            'NAME', 'UUID', 'RSSI (dBm)', 'Services'))
         for dev in devs:
+            services = ['']
+            if hasattr(dev, 'metadata'):
+                if isinstance(dev.metadata, dict):
+                    if 'uuids' in dev.metadata.keys():
+                        try:
+                            services = [ble_services_dict[serv.upper()] for serv in dev.metadata['uuids']]
+                        except Exception as e:
+                            services = ['']
 
-            print('{0:^20} | {1:^40} | {2:^10} |'.format(dev.name, dev.address,
-                                                         dev.rssi))
+            print('{0:^20} | {1:^40} | {2:^10} | {3:^40} |'.format(dev.name, dev.address,
+                                                         dev.rssi, ','.join(services)))
     sys.exit()
 # SCAN CONFIG
 if args.m == 'sconf':
@@ -403,6 +435,50 @@ if args.G is not None:
         print(e)
         print('file not found, please create a group first')
         sys.exit()
+
+# GET_SERV_TAG
+if args.m == 'get_stag':
+    if args.scode is not None:
+        print('{} : {}'.format(args.scode, ble_services_dict[args.scode]))
+
+    sys.exit()
+
+# GET_SERV_CODE
+if args.m == 'get_scode':
+    if args.stag is not None:
+        print('{} : {}'.format(args.stag, ble_services_dict_rev[args.stag]))
+
+    sys.exit()
+
+
+# GET_CHAR_TAG
+if args.m == 'get_ctag':
+    if args.ccode is not None:
+        print('{} : {}'.format(args.ccode, ble_char_dict[args.ccode]))
+
+    sys.exit()
+
+# GET_CHAR_CODE
+if args.m == 'get_ccode':
+    if args.ctag is not None:
+        print('{} : {}'.format(args.ctag, ble_char_dict_rev[args.ctag]))
+
+    sys.exit()
+
+# GET_APPEAR_TAG
+if args.m == 'get_aptag':
+    if args.apcode is not None:
+        print('{} : {}'.format(args.apcode, ble_appearances_dict[int(args.apcode)]))
+
+    sys.exit()
+
+# GET_APPEAR_CODE
+if args.m == 'get_apcode':
+    if args.aptag is not None:
+        print('{} : {}'.format(args.aptag, ble_appearances_dict_rev[args.aptag]))
+
+    sys.exit()
+
 
 # upyble LOOKS FOR upyble_.CONFIG FILE
 if args.t is None:
