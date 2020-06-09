@@ -97,6 +97,12 @@ This means that if the first argument is not a Mode keyword it assumes it is a '
 - **`upyble tscan`**: to scan for BLE devices, results with table format
 - **`upyble sconf`**: to scan and configure a device that matches a name `-d [NAME]`
 - **`upyble get_services`**: to get services of a device
+- **`upyble get_stag`**: to get service tag from a service code, use -scode to indicate the code
+- **`upyble get_scode`**: to get service code from a service tag, use -stag to indicate the tag
+- **`upyble get_ctag`**: to get characteristic tag from characteristic code, use -ccode to indicate the code
+- **`upyble get_ccode`**: to get characteristic code from a characteristic tag, use -ctag to indicate the tag
+- **`upyble get_aptag`**: to get appearance tag from an appearance code, use -apcode to indicate the code
+- **`upyble get_apcode`**: to get appearance code from an appearance tag, use -aptag to indicate the tag
 - **`upyble follow`**:   to read from a service (see `-s`, `-tm`, `-u` , `fmt` and `-x`) , e.g : `upyble follow -s "Battery Service" `
 - **`upyble see`**: to get specific info about a devices group use `-G` option as `see -G [GROUP NAME]`
 - **`upyble brepl`**: to enter the BLE SHELL-REPL
