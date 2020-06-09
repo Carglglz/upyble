@@ -52,7 +52,8 @@ class BLE_ADS:
         self._ble = ble
         self._ble.active(True)
         self._ble.irq(handler=self._irq)
-        ((self._handle,), (self._appear,)) = self._ble.gatts_register_services((_ADS_SERV_SERVICE, _DEV_INF_SERV_SERVICE))
+        ((self._handle,), (self._appear,)) = self._ble.gatts_register_services(
+            (_ADS_SERV_SERVICE, _DEV_INF_SERV_SERVICE))
         self._connections = set()
         self._payload = advertising_payload(
             name=name, services=[
@@ -89,7 +90,8 @@ class BLE_ADS:
     def read_volt(self, notify=False):
         # Data is sint16 in degrees Celsius with a resolution of 0.01 degrees Celsius.
         # Write the local value, ready for a central to read.
-        volt_sample = (self.ads_dev.ads.raw_to_v(self.ads_dev.ads.alert_read()))
+        volt_sample = (self.ads_dev.ads.raw_to_v(
+            self.ads_dev.ads.alert_read()))
         self._ble.gatts_write(self._handle, struct.pack(
             "f", volt_sample))
         if notify:
