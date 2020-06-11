@@ -95,7 +95,7 @@ This means that if the first argument is not a Mode keyword it assumes it is a '
 - **`upyble config`**: save upy device settings (*see `-t`, `-g`)*, so the target uuid argument wont be required any more
 - **`upyble scan`**: to scan for BLE devices (*see `-n` for max number of scans)*
 - **`upyble tscan`**: to scan for BLE devices, results with table format
-- **`upyble sconf`**: to scan and configure a device that matches a name `-d [NAME]`
+- **`upyble sconf`**: to scan and configure a device that matches a name *`-d [NAME]`*
 - **`upyble get_services`**: to get services of a device
 - **`upyble get_stag`**: to get service tag from a service code, use *`-scode`* to indicate the code
 - **`upyble get_scode`**: to get service code from a service tag, use *`-stag`* to indicate the tag
@@ -103,7 +103,7 @@ This means that if the first argument is not a Mode keyword it assumes it is a '
 - **`upyble get_ccode`**: to get characteristic code from a characteristic tag, use *`-ctag`* to indicate the tag
 - **`upyble get_aptag`**: to get appearance tag from an appearance code, use *`-apcode`* to indicate the code
 - **`upyble get_apcode`**: to get appearance code from an appearance tag, use *`-aptag`* to indicate the tag
-- **`upyble follow`**:   to read from a service (see `-s`, `-tm`, `-u` , `fmt` and `-x`) , e.g : `upyble follow -s "Battery Service" `
+- **`upyble follow`**:   to read from a service (see *`-s`,* *` -c`* , *` -tm`*, *`-u`* , *`fmt`* and  *`-x`*) , e.g : `upyble follow -s "Battery Service" `, will read all readable characteristics, or use  *` -c`*  to indicate a specific one/group.
 - **`upyble see`**: to get specific info about a devices group use `-G` option as `see -G [GROUP NAME]`
 - **`upyble brepl`**: to enter the BLE SHELL-REPL
 - **`upyble ble@[DEVICE]`**: to access brepl in a 'ssh' style command if a device is stored in a global group called `UPYBLE_G` (this needs to be created first doing e.g. `$ upyble make_group -g -f UPYBLE_G -devs foo_device UUID`) The device can be accessed as `$ upyble ble@foo_device` or redirect any command as e.g. `$ upyble get_services -@foo_device`.
