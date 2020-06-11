@@ -579,23 +579,23 @@ elif args.m == 'follow':
             log = logging.getLogger('upyble@{}'.format(bdev.name))
         else:
             log = logging.getLogger('upyble')
-        servs_keys = list(bdev.readables.keys())
+        servs_keys = list(bdev.services_rsum.keys())
         servs_values = list(bdev.readables.values())
-        if args.s in servs_keys or args.s in servs_values:
+        if args.s in servs_keys:
             while True:
                 try:
-                    if args.s in servs_keys:
-                        data = bdev.read_service(key=args.s, data_fmt=args.fmt)[0]
-                        log.info("{} [{}] : {:.2f} {}".format(args.s,
-                                                          ble_char_dict[bdev.readables[args.s]],
-                                                          data/args.x, args.u))
-                        time.sleep(args.tm)
-                    elif args.s in servs_values:
-                        data = bdev.read_service(uuid=args.s, data_fmt=args.fmt)[0]
-                        log.info("{} [{}] : {:.2f} {}".format(servs_keys[servs_values.index(args.s)],
-                                                     ble_char_dict[args.s],
-                                                     data/args.x, args.u))
-                        time.sleep(args.tm)
+                    for char in bdev.services_rsum[args.s]:
+                        if char in list(bdev.readables.keys()):
+                            data = bdev.read_service(key=char, data_fmt=args.fmt)[0]
+                            log.info("{} [{}] : {:.2f} {}".format(args.s, char,
+                                                              data/args.x, args.u))
+
+                        elif args.s in servs_values:
+                            data = bdev.read_service(uuid=args.s, data_fmt=args.fmt)[0]
+                            log.info("{} [{}] : {:.2f} {}".format(servs_keys[servs_values.index(args.s)],
+                                                         ble_char_dict[args.s],
+                                                         data/args.x, args.u))
+                    time.sleep(args.tm)
                 except Exception as e:
                     print(e)
                 except KeyboardInterrupt:

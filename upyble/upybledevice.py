@@ -415,9 +415,15 @@ class BASE_BLE_DEVICE:
                             char.properties), 'Descriptors': {descriptor.uuid: descriptor.handle for descriptor in char.descriptors}}
                 else:
                     if "read" in char.properties:
-                        self.readables[service.description] = char.uuid
+                        try:
+                            self.readables[ble_char_dict[char.uuid]] = char.uuid
+                        except Exception:
+                            self.readables[service.description] = char.uuid
                     if "write" in char.properties:
-                        self.writeables[service.description] = char.uuid
+                        try:
+                            self.writeables[service.description] = char.uuid
+                        except Exception as e:
+                            self.writeables[ble_char_dict[char.uuid]] = char.uuid
                     try:
                         self.services[service.description]['CHARS'][char.uuid] = {ble_char_dict[char.uuid]: ",".join(
                             char.properties), 'Descriptors': {descriptor.uuid: descriptor.handle for descriptor in char.descriptors}}
@@ -446,7 +452,8 @@ class BASE_BLE_DEVICE:
                                 descriptor.uuid, descriptor.handle
                             )
                         )
-
+        self.services_rsum = {key: [list(list(val['CHARS'].values())[i].keys())[0] for i in range(
+            len(list(val['CHARS'].values())))] for key, val in self.services.items()}
     # WRITE/READ SERVICES
 
     def fmt_data(self, data, CR=True):
