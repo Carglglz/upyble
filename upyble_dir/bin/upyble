@@ -53,7 +53,7 @@ helparg = '''
 - get_ccode: to get characteristic code from a characteristic tag, use -ctag to indicate the tag
 - get_aptag: to get appearance tag from an appearance code, use -apcode to indicate the code
 - get_apcode: to get appearance code from an appearance tag, use -aptag to indicate the tag
-- follow:   to read from a service (see -s, -tm, -u and -x)
+- follow:   to read from a service (see -s, -c, -tm, -u and -x)
 - see: To get specific info about a devices group use -G option as "see -G [GROUP NAME]"
 - brepl: to enter the BLE SHELL-REPL
 - ble: to access brepl in a 'ssh' style command
@@ -96,7 +96,8 @@ parser.add_argument("-f", help='script or file name', required=False)
 parser.add_argument("-@", help=help_dv, required=False).completer = ChoicesCompleter(see_global_devs())
 parser.add_argument('-n', type=int, default=3, help='number of max scans to try')
 parser.add_argument('-d', default='auto', help='device to config if available')
-parser.add_argument('-s', help='service to write, read or receive notifications').completer = ChoicesCompleter(ble_services_dict_rev.keys())
+parser.add_argument('-s', help='service to write, read or receive notifications from').completer = ChoicesCompleter(ble_services_dict_rev.keys())
+parser.add_argument('-c', nargs='+', help='characteristic to write, read or receive notifications from').completer = ChoicesCompleter(ble_char_dict_rev.keys())
 parser.add_argument('-tm', type=int, default=5, help='read every "tm" seconds')
 parser.add_argument('-u', default='', help='units to display')
 parser.add_argument('-x',  default=1, type=int, help='scale down data by a factor [X]')
@@ -579,12 +580,24 @@ elif args.m == 'follow':
             log = logging.getLogger('upyble@{}'.format(bdev.name))
         else:
             log = logging.getLogger('upyble')
+
+        # SERVICES AND CHARACTERISTICS Availability
         servs_keys = list(bdev.services_rsum.keys())
         servs_values = list(bdev.readables.values())
-        if args.s in servs_keys:
+        if args.c != [] and args.c is not None:
+            chars_to_read = [ch for ch in args.c if ch in bdev.services_rsum[args.s]]
+            for ch in args.c:
+                if ch not in bdev.services_rsum[args.s]:
+                    log.warning("Characterisctic {} not available".format(ch))
+                else:
+                    if ch not in list(bdev.readables.keys()):
+                        log.warning("Characterisctic {} not readable".format(ch))
+        else:
+            chars_to_read = bdev.services_rsum[args.s]
+        if args.s in servs_keys and chars_to_read != []:
             while True:
                 try:
-                    for char in bdev.services_rsum[args.s]:
+                    for char in chars_to_read:
                         if char in list(bdev.readables.keys()):
                             data = bdev.read_service(key=char, data_fmt=args.fmt)[0]
                             log.info("{} [{}] : {:.2f} {}".format(args.s, char,
@@ -595,6 +608,8 @@ elif args.m == 'follow':
                             log.info("{} [{}] : {:.2f} {}".format(servs_keys[servs_values.index(args.s)],
                                                          ble_char_dict[args.s],
                                                          data/args.x, args.u))
+                        else:
+                            log.warning("Characterisctic {} not readable".format(char))
                     time.sleep(args.tm)
                 except Exception as e:
                     print(e)
