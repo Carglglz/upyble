@@ -44,5 +44,5 @@ setup(name='upyble',
                'ble_repl_dir/bin/blerepl'],
       include_package_data=True,
       install_requires=['argcomplete', 'prompt_toolkit', 'requests',
-                        'bleak', 'Pygments',
+                        'bleak', 'Pygments', 'netifaces'
                         ])
