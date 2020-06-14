@@ -40,17 +40,24 @@ _TEMP_SERV_SERVICE = (
 
 # org.bluetooth.service.device_information
 _DEV_INF_SERV_UUID = bluetooth.UUID(0x180A)
-# org.bluetooth.characteristic.analog
+# org.bluetooth.characteristic.appearance
 _APPEAR_CHAR = (
     bluetooth.UUID(0x2A01),
     bluetooth.FLAG_READ
 )
+# org.bluetooth.characteristic.Manufacturer Name String
+_MANUFACT_CHAR = (
+    bluetooth.UUID(0x2A29),
+    bluetooth.FLAG_READ
+)
 _DEV_INF_SERV_SERVICE = (
     _DEV_INF_SERV_UUID,
-    (_APPEAR_CHAR,),
+    (_APPEAR_CHAR, _MANUFACT_CHAR,),
 )
 # org.bluetooth.characteristic.gap.appearance.xml
 _ADV_APPEARANCE_GENERIC_THERMOMETER = const(768)
+
+_MANUFACT_ESPRESSIF = const(741)
 
 
 class BLE_Battery_Temp:
@@ -63,8 +70,8 @@ class BLE_Battery_Temp:
         self._ble = ble
         self._ble.active(True)
         self._ble.irq(handler=self._irq)
-        ((self._handle,), (self._appear,), (self._temp,)) = self._ble.gatts_register_services(
-            (_TEMP_SERV_SERVICE, _BATT_SERV_SERVICE, _DEV_INF_SERV_SERVICE))
+        ((self._handle,), (self._appear, self._manufact,), (self._temp,)) = self._ble.gatts_register_services(
+            (_BATT_SERV_SERVICE, _DEV_INF_SERV_SERVICE, _TEMP_SERV_SERVICE))
         self._connections = set()
         self._payload = advertising_payload(
             name=name, services=[
@@ -73,6 +80,8 @@ class BLE_Battery_Temp:
         self._advertise()
         self._ble.gatts_write(self._appear, struct.pack(
             "h", _ADV_APPEARANCE_GENERIC_THERMOMETER))
+        self._ble.gatts_write(self._manufact, struct.pack(
+            "h", _MANUFACT_ESPRESSIF))
 
     def _irq(self, event, data):
         # Track connections so we can send notifications.

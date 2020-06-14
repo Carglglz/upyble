@@ -18,6 +18,7 @@ from upyble.upybledevice import ble_scan, BASE_BLE_DEVICE
 from upyble.chars import ble_char_dict, ble_char_dict_rev
 from upyble.servs import ble_services_dict, ble_services_dict_rev
 from upyble.appearances import ble_appearances_dict, ble_appearances_dict_rev
+from upyble.manufacturer import ble_manufacturer_dict, ble_manufacturer_dict_rev
 
 
 def see_global_devs():
