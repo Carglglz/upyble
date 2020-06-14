@@ -100,7 +100,7 @@ class BLE_Battery_Temp:
         bat_volt = round(((self.bat.read()*2)/4095)*3.6, 2)
         percentage = int(round((bat_volt - 3.3) / (4.23 - 3.3) * 100, 1))
         self._ble.gatts_write(self._handle, struct.pack(
-            "<h", percentage))
+            "B", percentage))
         if notify:
             for conn_handle in self._connections:
                 # Notify connected centrals to issue a read.

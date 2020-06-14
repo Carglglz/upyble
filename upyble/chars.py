@@ -1,4 +1,6 @@
 import upyble
+import xml.etree.ElementTree as ET
+from upyble.SI_units import ble_SI_units_dict, DATA_FMT
 
 CHARS_XML_DIR = "{}/chars_xml".format(upyble.__path__[0])
 
@@ -284,3 +286,67 @@ ble_char_dict_rev = dict(zip(TK, CK_codes))
 
 
 # XML PARSER --> get char tag and return char_xml class
+
+class CHAR_XML:
+    def __init__(self, xml_file):
+        self._tree = ET.parse("{}/{}".format(CHARS_XML_DIR, xml_file))
+        self._root = self._tree.getroot()
+        self.char_metada = None
+        self.name = None
+        self.char_type = None
+        self.uuid = None
+        self.field_name = None
+        self.info_text = None
+        self.requirment = None
+        self.data_format = None
+        self.fmt = None
+        self.unit_stringcode = None
+        self.unit = None
+        self.unit_symbol = None
+        self.quantity = None
+        self.unit = None
+
+        self.dec_exp = None
+        self.get_data()
+
+    def get_data(self):
+        for val in self._root.iter():
+            if val.tag == 'Characteristic':
+                self.char_metada = val.attrib
+                self.name = self.char_metada['name']
+                self.char_type = self.char_metada['type']
+                self.uuid = self.char_metada['uuid']
+            if val.tag == 'Field':
+                self.field_name = val.attrib['name']
+
+            if val.tag == 'InformativeText':
+                self.info_text = val.text
+            if val.tag == 'Requirement':
+                self.requirment = val.text
+            if val.tag == 'Format':
+                self.data_format = val.text
+                self.fmt = DATA_FMT[self.data_format]
+            if val.tag == 'Unit':
+                self.unit_stringcode = val.text
+                # get unit from unit stringcode
+                unit_stringcode_filt = self.unit_stringcode.replace("org.bluetooth.unit.", '')
+                self.quantity = ' '.join(unit_stringcode_filt.split('.')[0].split('_'))
+                try:
+                    self.unit = ' '.join(unit_stringcode_filt.split('.')[1].split('_'))
+                    self.unit_symbol = ble_SI_units_dict[self.unit]
+                except Exception as e:
+                    try:
+                        self.unit = self.quantity
+                        self.unit_symbol = ble_SI_units_dict[self.unit]
+                    except Exception as e:
+                        self.unit = ''
+                        self.unit_symbol = ''
+                # get unit_symbol
+            if val.tag == 'DecimalExponent':
+                self.dec_exp = int(val.text)
+
+
+def get_XML_CHAR(char):
+    char_string = "_".join([ch.lower().replace('-', ' ') for ch in char.split()])
+    char_string += '.xml'
+    return CHAR_XML(char_string)

@@ -19,6 +19,7 @@ from upyble.chars import ble_char_dict, ble_char_dict_rev
 from upyble.servs import ble_services_dict, ble_services_dict_rev
 from upyble.appearances import ble_appearances_dict, ble_appearances_dict_rev
 from upyble.manufacturer import ble_manufacturer_dict, ble_manufacturer_dict_rev
+from upyble.chars import get_XML_CHAR
 
 
 def see_global_devs():
@@ -82,7 +83,7 @@ help_dv = "To point the command to a specific device saved in the global group"
 keywords_mode = ['config', 'scan', 'tscan', 'sconf', 'get_services',
                  'brepl', 'ble', 'make_group', 'mg_group', 'see', 'check',
                  'follow', 'get_stag', 'get_scode', 'get_ctag',
-                 'get_ccode', 'get_aptag', 'get_apcode']
+                 'get_ccode', 'get_aptag', 'get_apcode', 'rfollow']
 
 parser = argparse.ArgumentParser(prog='upyble',
                                  description='Command line tool for Bluetooth Low Energy MicroPython devices',
@@ -100,7 +101,7 @@ parser.add_argument('-d', default='auto', help='device to config if available')
 parser.add_argument('-s', help='service to write, read or receive notifications from').completer = ChoicesCompleter(ble_services_dict_rev.keys())
 parser.add_argument('-c', nargs='+', help='characteristic to write, read or receive notifications from').completer = ChoicesCompleter(ble_char_dict_rev.keys())
 parser.add_argument('-tm', type=int, default=5, help='read every "tm" seconds')
-parser.add_argument('-u', default='', help='units to display')
+parser.add_argument('-u', default='AU', help='units to display')
 parser.add_argument('-x',  default=1, type=int, help='scale down data by a factor [X]')
 parser.add_argument('-fmt',  default='<h', help='binary data format to unpack')
 parser.add_argument('-stag',  help='Service tag; e.g "Environmental Sensing"').completer = ChoicesCompleter(ble_services_dict_rev.keys())
@@ -481,6 +482,9 @@ if args.m == 'get_apcode':
 
     sys.exit()
 
+# GET MANUFACTURER
+
+# GET CHAR METADATA
 
 # upyble LOOKS FOR upyble_.CONFIG FILE
 if args.t is None:
@@ -562,8 +566,103 @@ elif args.m == 'ble':
             print('UUID INVALID or DEVICE NOT REACHABLE')
 
 # READ/FOLLOW SERVICE
-
 elif args.m == 'follow':
+    print('Following service: {}'.format(args.s))
+    bdev = BASE_BLE_DEVICE(args.t)
+    bdev.connect(n_tries=args.n, show_servs=True, log=False)
+    if not bdev.connected:
+        print('Device not reachable try again.')
+        sys.exit()
+    else:
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setLevel(logging.INFO)
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(asctime)s [%(name)s] %(message)s",
+            handlers=[handler])
+        if bdev.name is not None:
+            log = logging.getLogger('upyble@{}'.format(bdev.name))
+        else:
+            log = logging.getLogger('upyble')
+
+        # SERVICES AND CHARACTERISTICS Availability
+        servs_keys = list(bdev.services_rsum.keys())
+        servs_values = list(bdev.readables.values())
+        if args.c != [] and args.c is not None:
+            chars_to_read = [ch for ch in args.c if ch in bdev.services_rsum[args.s]]
+            for ch in args.c:
+                if ch not in bdev.services_rsum[args.s]:
+                    log.warning("Characterisctic {} not available".format(ch))
+                else:
+                    if ch not in list(bdev.readables.keys()):
+                        log.warning("Characterisctic {} not readable".format(ch))
+        else:
+            if args.s != 'all':
+                chars_to_read = bdev.services_rsum[args.s]
+        if args.s in servs_keys and chars_to_read != []:
+            # GET CHARS INFO
+            CHARS_XML_AUTO = {char: get_XML_CHAR(char) for char in chars_to_read}
+            while True:
+                try:
+                    for char in chars_to_read:
+                        if char in list(bdev.readables.keys()):
+                            scale = args.x
+                            if CHARS_XML_AUTO[char].dec_exp is not None:
+                                scale = 1/(10**CHARS_XML_AUTO[char].dec_exp)
+                            data = bdev.read_service(key=char, data_fmt=CHARS_XML_AUTO[char].fmt)[0]
+                            log.info("{} [{}] : {} {}".format(args.s, char,
+                                                              data/scale, CHARS_XML_AUTO[char].unit_symbol))
+
+                        # elif args.s in servs_values:
+                        #     data = bdev.read_service(uuid=args.s, data_fmt=args.fmt)[0]
+                        #     log.info("{} [{}] : {:.2f} {}".format(servs_keys[servs_values.index(args.s)],
+                        #                                  ble_char_dict[args.s],
+                        #                                  data/args.x, args.u))
+                        else:
+                            log.warning("Characterisctic {} not readable".format(char))
+                    time.sleep(args.tm)
+                except Exception as e:
+                    print(e)
+                except KeyboardInterrupt:
+                    break
+        else:
+            if args.s == 'all':
+                chars_to_read = bdev.readables.keys()
+                CHARS_XML_AUTO = {}
+                for char in chars_to_read:
+                    try:
+                        CHARS_XML_AUTO[char] = get_XML_CHAR(char)
+                    except Exception as e:
+                        log.debug('Char {} xml malformed'.format(char))
+                while True:
+                    try:
+                        for serv in bdev.services_rsum.keys():
+                            for char in bdev.services_rsum[serv]:
+                                scale = args.x
+                                if char in list(CHARS_XML_AUTO.keys()):
+                                    if CHARS_XML_AUTO[char].dec_exp is not None:
+                                        scale = 1/(10**CHARS_XML_AUTO[char].dec_exp)
+                                    data = bdev.read_service(key=char, data_fmt=CHARS_XML_AUTO[char].fmt)[0]
+                                    log.info("{} [{}] : {} {}".format(serv, char,
+                                                                      data/scale, CHARS_XML_AUTO[char].unit_symbol))
+
+                                # elif args.s in servs_values:
+                                #     data = bdev.read_service(uuid=args.s, data_fmt=args.fmt)[0]
+                                #     log.info("{} [{}] : {:.2f} {}".format(servs_keys[servs_values.index(args.s)],
+                                #                                  ble_char_dict[args.s],
+                                #                                  data/args.x, args.u))
+                                else:
+                                    log.debug("Characterisctic {} not readable".format(char))
+                        time.sleep(args.tm)
+                    except Exception as e:
+                        print(e)
+                    except KeyboardInterrupt:
+                        break
+        bdev.disconnect()
+        sys.exit()
+
+# RAW
+elif args.m == 'rfollow':
     print('Following service: {}'.format(args.s))
     bdev = BASE_BLE_DEVICE(args.t)
     bdev.connect(n_tries=args.n, show_servs=True, log=False)
@@ -601,12 +700,12 @@ elif args.m == 'follow':
                     for char in chars_to_read:
                         if char in list(bdev.readables.keys()):
                             data = bdev.read_service(key=char, data_fmt=args.fmt)[0]
-                            log.info("{} [{}] : {:.2f} {}".format(args.s, char,
+                            log.info("{} [{}] : {} {}".format(args.s, char,
                                                               data/args.x, args.u))
 
                         elif args.s in servs_values:
                             data = bdev.read_service(uuid=args.s, data_fmt=args.fmt)[0]
-                            log.info("{} [{}] : {:.2f} {}".format(servs_keys[servs_values.index(args.s)],
+                            log.info("{} [{}] : {} {}".format(servs_keys[servs_values.index(args.s)],
                                                          ble_char_dict[args.s],
                                                          data/args.x, args.u))
                         else:
