@@ -1,4 +1,6 @@
+import upyble
 
+CHARS_XML_DIR = "{}/chars_xml".format(upyble.__path__[0])
 
 CK = ['0x2A7E', '0x2A84', '0x2A7F', '0x2A80', '0x2A5A',
       '0x2A43', '0x2A42', '0x2A06', '0x2A44', '0x2A3F', '0x2AB3', '0x2A81',
@@ -279,3 +281,6 @@ TK = ['Aerobic Heart Rate Lower Limit',
 CK_codes = [ck.replace('0x', '') for ck in CK]
 ble_char_dict = dict(zip(CK_codes, TK))
 ble_char_dict_rev = dict(zip(TK, CK_codes))
+
+
+# XML PARSER --> get char tag and return char_xml class
