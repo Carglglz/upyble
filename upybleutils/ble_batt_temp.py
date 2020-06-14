@@ -70,8 +70,8 @@ class BLE_Battery_Temp:
         self._ble = ble
         self._ble.active(True)
         self._ble.irq(handler=self._irq)
-        ((self._handle,), (self._appear, self._manufact,), (self._temp,)) = self._ble.gatts_register_services(
-            (_BATT_SERV_SERVICE, _DEV_INF_SERV_SERVICE, _TEMP_SERV_SERVICE))
+        ((self._appear, self._manufact,), (self._handle,), (self._temp,)) = self._ble.gatts_register_services(
+            (_DEV_INF_SERV_SERVICE, _BATT_SERV_SERVICE, _TEMP_SERV_SERVICE))
         self._connections = set()
         self._payload = advertising_payload(
             name=name, services=[
@@ -98,15 +98,16 @@ class BLE_Battery_Temp:
         # Data is sint16 in degrees Celsius with a resolution of 0.01 degrees Celsius.
         # Write the local value, ready for a central to read.
         bat_volt = round(((self.bat.read()*2)/4095)*3.6, 2)
+        percentage = int(round((bat_volt - 3.3) / (4.23 - 3.3) * 100, 1))
         self._ble.gatts_write(self._handle, struct.pack(
-            "f", bat_volt))
+            "<h", percentage))
         if notify:
             for conn_handle in self._connections:
                 # Notify connected centrals to issue a read.
                 self._ble.gatts_notify(conn_handle, self._handle)
-        bat_temp = round((esp32.raw_temperature()-32)/1.8, 2)
+        bat_temp = int(round((esp32.raw_temperature()-32)/1.8, 2)*100)
         self._ble.gatts_write(self._temp, struct.pack(
-            "f", bat_temp))
+            "<h", bat_temp))
 
     def _advertise(self, interval_us=500000):
         self._ble.gap_advertise(interval_us, adv_data=self._payload)
