@@ -55,7 +55,10 @@ helparg = '''
 - get_ccode: to get characteristic code from a characteristic tag, use -ctag to indicate the tag
 - get_aptag: to get appearance tag from an appearance code, use -apcode to indicate the code
 - get_apcode: to get appearance code from an appearance tag, use -aptag to indicate the tag
-- follow:   to read from a service (see -s, -c, -tm, -u and -x)
+- get_mtag: to get manufacturer tag from manufacturer code, use -mcode to indicate the code
+- get_mcode: to get manufacturer code from a manufacturer tag, use -mtag to indicate the tag
+- follow:   to read from a service (see -s, -c, -tm), auto detects format and unit from characteristic metadata
+- rfollow: to read from a service (see -s, -c, -tm, -u, -fmt, -x)
 - see: To get specific info about a devices group use -G option as "see -G [GROUP NAME]"
 - brepl: to enter the BLE SHELL-REPL
 - ble: to access brepl in a 'ssh' style command
@@ -83,7 +86,8 @@ help_dv = "To point the command to a specific device saved in the global group"
 keywords_mode = ['config', 'scan', 'tscan', 'sconf', 'get_services',
                  'brepl', 'ble', 'make_group', 'mg_group', 'see', 'check',
                  'follow', 'get_stag', 'get_scode', 'get_ctag',
-                 'get_ccode', 'get_aptag', 'get_apcode', 'rfollow']
+                 'get_ccode', 'get_aptag', 'get_apcode', 'rfollow',
+                 'get_mcode', 'get_mtag', 'cmdata']
 
 parser = argparse.ArgumentParser(prog='upyble',
                                  description='Command line tool for Bluetooth Low Energy MicroPython devices',
@@ -110,6 +114,8 @@ parser.add_argument('-ctag',  help='Characteristic tag; e.g "Appearance"').compl
 parser.add_argument('-ccode',  help='Characteristic code; e.g "2A01"').completer = ChoicesCompleter(ble_char_dict.keys())
 parser.add_argument('-aptag',  help='Appearance tag; e.g "GENERIC_THERMOMETER"').completer = ChoicesCompleter(ble_appearances_dict_rev.keys())
 parser.add_argument('-apcode',  help='Appearance code; e.g "768"').completer = ChoicesCompleter(ble_appearances_dict.keys())
+parser.add_argument('-mtag',  help='Manufacturer tag; e.g "Espressif"').completer = ChoicesCompleter(ble_manufacturer_dict_rev.keys())
+parser.add_argument('-mcode',  help='Manufacturer code; e.g "741"').completer = ChoicesCompleter(ble_manufacturer_dict.keys())
 
 parser.add_argument(
     "-st", help='shows target uuid if using config file', required=False, default=False, action='store_true')
@@ -482,9 +488,66 @@ if args.m == 'get_apcode':
 
     sys.exit()
 
-# GET MANUFACTURER
+# GET_MANUFACTURER_TAG
+if args.m == 'get_mtag':
+    if args.mcode is not None:
+        print('{} : {}'.format(args.mcode, ble_manufacturer_dict[int(args.mcode)]))
+
+    sys.exit()
+
+# GET_MANUFACTURER_CODE
+if args.m == 'get_mcode':
+    if args.mtag is not None:
+        print('{} : {}'.format(args.mtag, ble_manufacturer_dict_rev[args.mtag]))
+
+    sys.exit()
 
 # GET CHAR METADATA
+if args.m == 'cmdata':
+    try:
+        print('Characteristic Metadata:')
+        for char in args.c:
+            print('Characteristic: {}'.format(char))
+            char_xml = get_XML_CHAR(char)
+            print('    - NAME: {}'.format(char_xml.name))
+            print('    - UUID: {}'.format(char_xml.uuid))
+            print('    - QUANTITY: {}'.format(char_xml.quantity))
+            print('    - UNIT: {}'.format(char_xml.unit))
+            print('    - SYMBOL: {}'.format(char_xml.unit_symbol))
+            print('    - FORMAT: {}'.format(char_xml.data_format))
+            print('    - CTYPE: {}'.format(char_xml.fmt))
+            print('    - TYPE: {}'.format(char_xml.char_type))
+            print('    - Note: {}'.format(char_xml.info_text))
+            print('    - Decimal Exponent: {}'.format(char_xml.dec_exp))
+        sys.exit()
+    except Exception as e:
+        print('XML not available or malformed')
+        sys.exit()
+
+if args.m == 'cmdata_t':
+    try:
+        print('Characteristic Metadata')
+        print('┏{0}━┳━{1}━┳━{2}━┳━{3}━┳━{4}━┳━{5}━┓'.format(
+            '━'*20, '━'*5, '━'*20, '━'*10, '━'*10, '━'*10))
+        print('┃{0:^20} ┃ {1:^5} ┃ {2:^20} ┃ {3:^10} ┃ {4:^10} ┃ {5:^10} ┃'.format(
+            'NAME', 'UUID', 'UNIT', 'SYMBOL', 'FORMAT', 'CTYPE'))
+        print('┣{0}━╋━{1}━╋━{2}━╋━{3}━╋━{4}━╋━{5}━┫'.format(
+            '━'*20, '━'*5, '━'*20, '━'*10, '━'*10, '━'*10))
+        for char in args.c:
+            char_xml = get_XML_CHAR(char)
+            print('┃{0:^20} ┃ {1:^5} ┃ {2:^20} ┃ {3:^10} ┃ {4:^10} ┃ {5:^10} ┃'.format(char_xml.name,
+                                                                   char_xml.uuid,
+                                                                   char_xml.unit,
+                                                                   char_xml.unit_symbol,
+                                                                   char_xml.data_format,
+                                                                   char_xml.fmt))
+        print('┗{0}━┻━{1}━┻━{2}━┻━{3}━┻━{4}━┻━{5}━┛'.format(
+            '━'*20, '━'*5, '━'*20, '━'*10, '━'*10, '━'*10))
+        sys.exit()
+    except Exception as e:
+        print('XML not available or malformed')
+        sys.exit()
+
 
 # upyble LOOKS FOR upyble_.CONFIG FILE
 if args.t is None:

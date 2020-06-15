@@ -305,7 +305,6 @@ class CHAR_XML:
         self.unit_symbol = None
         self.quantity = None
         self.unit = None
-
         self.dec_exp = None
         self.get_data()
 
