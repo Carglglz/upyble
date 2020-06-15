@@ -115,6 +115,65 @@ This means that if the first argument is not a Mode keyword it assumes it is a '
 
 ____
 
+#### Examples: 
+
+##### 	Follow the Battery Level and Temperature (cpu) of an Esp32.
+
+​	This needs `ble_batt_temp.py` in the device. (See upybleutils)
+
+​	In the REPL do:
+
+```python
+>>> import ble_batt_temp
+>>> ble_batt_temp.ble_batt.start_batt_bg()
+```
+
+Now in local Shell/Terminal:
+
+1. Scan and configure device:
+
+   ```bash
+   $ upyble scan
+   Scanning...
+   Scanning...
+   BLE device/s found: 1
+   NAME: esp32-batt-temp, UUID: 9998175F-9A91-4CA2-B5EA-482AFC3453B9, RSSI: -59.0 dBm, Services: Environmental Sensing
+   
+   $ upyble config -t 9998175F-9A91-4CA2-B5EA-482AFC3453B9 -g
+   upyble device settings saved globally!
+   ```
+
+   
+
+2. Follow services
+
+```bash
+$ upyble follow -s all
+Following service: all
+[Service] 180A: Device Information
+	[Characteristic] 2A01: (read) | Name: Appearance
+	[Characteristic] 2A29: (read) | Name: Manufacturer Name String
+[Service] 180F: Battery Service
+	[Characteristic] 2A19: (read,notify) | Name: Battery Level
+		[Descriptor] 2902: (Handle: 19)
+[Service] 181A: Environmental Sensing
+	[Characteristic] 2A6E: (read,notify) | Name: Temperature
+		[Descriptor] 2902: (Handle: 23)
+15:35:28,813 [upyble@esp32-batt-temp] Battery Service [Battery Level] : 77.0 %
+15:35:28,843 [upyble@esp32-batt-temp] Environmental Sensing [Temperature] : 56.67 °C
+15:35:33,883 [upyble@esp32-batt-temp] Battery Service [Battery Level] : 76.0 %
+15:35:33,913 [upyble@esp32-batt-temp] Environmental Sensing [Temperature] : 56.67 °C
+15:35:38,954 [upyble@esp32-batt-temp] Battery Service [Battery Level] : 76.0 %
+15:35:38,983 [upyble@esp32-batt-temp] Environmental Sensing [Temperature] : 56.67 °C
+15:35:44,024 [upyble@esp32-batt-temp] Battery Service [Battery Level] : 71.0 %
+15:35:44,053 [upyble@esp32-batt-temp] Environmental Sensing [Temperature] : 56.67 °C
+^CDisconnected successfully
+```
+
+
+
+___
+
 #### SEE WHAT'S GOING ON UNDER THE HOOD:
 
 _ℹ️ Host and the device must be connected._
