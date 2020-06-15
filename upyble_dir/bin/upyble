@@ -57,7 +57,7 @@ helparg = '''
 - get_apcode: to get appearance code from an appearance tag, use -aptag to indicate the tag
 - get_mtag: to get manufacturer tag from manufacturer code, use -mcode to indicate the code
 - get_mcode: to get manufacturer code from a manufacturer tag, use -mtag to indicate the tag
-- follow:   to read from a service (see -s, -c, -tm), auto detects format and unit from characteristic metadata
+- follow:   to read from a service (see -s, -c, -tm), autodetects format and unit from characteristic metadata
 - rfollow: to read from a service (see -s, -c, -tm, -u, -fmt, -x)
 - see: To get specific info about a devices group use -G option as "see -G [GROUP NAME]"
 - brepl: to enter the BLE SHELL-REPL
