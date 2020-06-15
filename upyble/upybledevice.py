@@ -93,7 +93,7 @@ if sys.platform == 'linux':
 #         await self.ble_client.disconnect()
 #         self.connected = await self.ble_client.is_connected()
 #         if not self.connected:
-#             print("Disconnected succesfully")
+#             print("Disconnected successfully")
 #
 #     def connect(self, n_tries=3):
 #         self.loop.run_until_complete(self.connect_client(n_tries=n_tries))
@@ -369,7 +369,7 @@ class BASE_BLE_DEVICE:
         self.connected = await self.ble_client.is_connected()
         if not self.connected:
             if log:
-                print("Disconnected succesfully")
+                print("Disconnected successfully")
 
     def connect(self, n_tries=3, show_servs=False, log=True):
         self.loop.run_until_complete(self.connect_client(n_tries=n_tries,
