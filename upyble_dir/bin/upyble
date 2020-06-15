@@ -57,9 +57,9 @@ helparg = '''
 - get_apcode: to get appearance code from an appearance tag, use -aptag to indicate the tag
 - get_mtag: to get manufacturer tag from manufacturer code, use -mcode to indicate the code
 - get_mcode: to get manufacturer code from a manufacturer tag, use -mtag to indicate the tag
-- get_cmdata: to get characteristic metadata (name, type, uuid, unit, format, notes...).
+- cmdata: to get characteristic metadata (name, type, uuid, unit, format, notes...).
               Use -c option to indicate characteristic
-- get_cmdata_t: get_cmdata in table format.
+- cmdata_t: get_cmdata in table format.
 - follow:   to read from a service (see -s, -c, -tm), autodetects format and unit from characteristic metadata
 - rfollow: to read from a service (see -s, -c, -tm, -u, -fmt, -x)
 - see: To get specific info about a devices group use -G option as "see -G [GROUP NAME]"
