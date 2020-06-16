@@ -373,3 +373,12 @@ def get_XML_CHAR(char):
                             for ch in char.split()])
     char_string += '.xml'
     return CHAR_XML(char_string)
+
+
+def get_raw_XML_CHAR(char):
+    char_string = "_".join([ch.lower().replace('-', ' ')
+                            for ch in char.split()])
+    char_string += '.xml'
+
+    with open("{}/{}".format(CHARS_XML_DIR, char_string), 'rb') as xmlfileraw:
+        return xmlfileraw.read().decode()

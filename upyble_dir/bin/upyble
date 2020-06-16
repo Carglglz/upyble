@@ -19,7 +19,7 @@ from upyble.chars import ble_char_dict, ble_char_dict_rev
 from upyble.servs import ble_services_dict, ble_services_dict_rev
 from upyble.appearances import ble_appearances_dict, ble_appearances_dict_rev
 from upyble.manufacturer import ble_manufacturer_dict, ble_manufacturer_dict_rev
-from upyble.chars import get_XML_CHAR
+from upyble.chars import get_XML_CHAR, get_raw_XML_CHAR
 
 
 def see_global_devs():
@@ -510,29 +510,72 @@ if args.m == 'cmdata':
     try:
         if not args.xml:
             print('Characteristic Metadata:')
-            for char in args.c:
-                print('Characteristic: {}'.format(char))
-                char_xml = get_XML_CHAR(char)
-                print('    - NAME: {}'.format(char_xml.name))
-                print('    - UUID: {}'.format(char_xml.uuid))
-                print('    - QUANTITY: {}'.format(char_xml.quantity))
-                print('    - UNIT: {}'.format(char_xml.unit))
-                print('    - SYMBOL: {}'.format(char_xml.unit_symbol))
-                print('    - FORMAT: {}'.format(char_xml.data_format))
-                print('    - CTYPE: {}'.format(char_xml.fmt))
-                print('    - TYPE: {}'.format(char_xml.char_type))
-                print('    - Note: {}'.format(char_xml.info_text))
-                print('    - Decimal Exponent: {}'.format(char_xml.dec_exp))
+            if 'all' in args.c:
+                for char in ble_char_dict_rev.keys():
+                    try:
+                        print('Characteristic: {}'.format(char))
+                        char_xml = get_XML_CHAR(char)
+                        print('    - NAME: {}'.format(char_xml.name))
+                        print('    - ABSTRACT: {}'.format(char_xml.abstract))
+                        print('    - SUMMARY: {}'.format(char_xml.summary))
+                        print('    - UUID: {}'.format(char_xml.uuid))
+                        print('    - QUANTITY: {}'.format(char_xml.quantity))
+                        print('    - UNIT_ID: {}'.format(char_xml.unit_stringcode))
+                        print('    - UNIT: {}'.format(char_xml.unit))
+                        print('    - SYMBOL: {}'.format(char_xml.unit_symbol))
+                        print('    - FORMAT: {}'.format(char_xml.data_format))
+                        print('    - CTYPE: {}'.format(char_xml.fmt))
+                        print('    - TYPE: {}'.format(char_xml.char_type))
+                        print('    - INFO TEXT: {}'.format(char_xml.info_text))
+                        print('    - DESCRIPTION: {}'.format(char_xml.description))
+                        print('    - MAXIMUM: {}'.format(char_xml.maximum))
+                        print('    - MINIMUM: {}'.format(char_xml.minimum))
+                        print('    - DECIMAL EXPONENT: {}'.format(char_xml.dec_exp))
+                        print('    - NOTE: {}'.format(char_xml.note))
+                    except Exception as e:
+                        print('XML not available or malformed')
+
+            else:
+
+                for char in args.c:
+                    print('Characteristic: {}'.format(char))
+                    char_xml = get_XML_CHAR(char)
+                    print('    - NAME: {}'.format(char_xml.name))
+                    print('    - ABSTRACT: {}'.format(char_xml.abstract))
+                    print('    - SUMMARY: {}'.format(char_xml.summary))
+                    print('    - UUID: {}'.format(char_xml.uuid))
+                    print('    - QUANTITY: {}'.format(char_xml.quantity))
+                    print('    - UNIT_ID: {}'.format(char_xml.unit_stringcode))
+                    print('    - UNIT: {}'.format(char_xml.unit))
+                    print('    - SYMBOL: {}'.format(char_xml.unit_symbol))
+                    print('    - FORMAT: {}'.format(char_xml.data_format))
+                    print('    - CTYPE: {}'.format(char_xml.fmt))
+                    print('    - TYPE: {}'.format(char_xml.char_type))
+                    print('    - INFO TEXT: {}'.format(char_xml.info_text))
+                    print('    - DESCRIPTION: {}'.format(char_xml.description))
+                    print('    - MAXIMUM: {}'.format(char_xml.maximum))
+                    print('    - MINIMUM: {}'.format(char_xml.minimum))
+                    print('    - DECIMAL EXPONENT: {}'.format(char_xml.dec_exp))
+                    print('    - NOTE: {}'.format(char_xml.note))
         else:
-            print('Characteristic Metadata XML:')
             for char in args.c:
                 print('Characteristic: {}'.format(char))
+                print('<-----Characteristic Metadata XML---->')
                 char_xml = get_XML_CHAR(char)
                 print(char_xml._raw)
         sys.exit()
     except Exception as e:
-        print(e)
-        print('XML not available or malformed')
+        try:
+            if args.xml:
+                for char in args.c:
+                    # print('Characteristic: {}'.format(char))
+                    # print('<-----Characteristic Metadata XML---->')
+                    print(get_raw_XML_CHAR(char))
+            else:
+                print('XML not available or malformed')
+        except Exception as e:
+            print(e)
+            print('XML not available or malformed')
         sys.exit()
 
 if args.m == 'cmdata_t':
