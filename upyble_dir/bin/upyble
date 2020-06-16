@@ -14,7 +14,7 @@ import logging
 import subprocess
 import argcomplete
 from argcomplete.completers import ChoicesCompleter
-from upyble.upybledevice import ble_scan, BASE_BLE_DEVICE
+from upyble.upybledevice import ble_scan, BASE_BLE_DEVICE, BLE_DEVICE
 from upyble.chars import ble_char_dict, ble_char_dict_rev
 from upyble.servs import ble_services_dict, ble_services_dict_rev
 from upyble.appearances import ble_appearances_dict, ble_appearances_dict_rev
@@ -119,7 +119,7 @@ parser.add_argument('-aptag',  help='Appearance tag; e.g "GENERIC_THERMOMETER"')
 parser.add_argument('-apcode',  help='Appearance code; e.g "768"').completer = ChoicesCompleter(ble_appearances_dict.keys())
 parser.add_argument('-mtag',  help='Manufacturer tag; e.g "Espressif"').completer = ChoicesCompleter(ble_manufacturer_dict_rev.keys())
 parser.add_argument('-mcode',  help='Manufacturer code; e.g "741"').completer = ChoicesCompleter(ble_manufacturer_dict.keys())
-
+parser.add_argument('-xml', help='To see metadata in original xml format', action='store_true')
 parser.add_argument(
     "-st", help='shows target uuid if using config file', required=False, default=False, action='store_true')
 parser.add_argument(
@@ -508,22 +508,30 @@ if args.m == 'get_mcode':
 # GET CHAR METADATA
 if args.m == 'cmdata':
     try:
-        print('Characteristic Metadata:')
-        for char in args.c:
-            print('Characteristic: {}'.format(char))
-            char_xml = get_XML_CHAR(char)
-            print('    - NAME: {}'.format(char_xml.name))
-            print('    - UUID: {}'.format(char_xml.uuid))
-            print('    - QUANTITY: {}'.format(char_xml.quantity))
-            print('    - UNIT: {}'.format(char_xml.unit))
-            print('    - SYMBOL: {}'.format(char_xml.unit_symbol))
-            print('    - FORMAT: {}'.format(char_xml.data_format))
-            print('    - CTYPE: {}'.format(char_xml.fmt))
-            print('    - TYPE: {}'.format(char_xml.char_type))
-            print('    - Note: {}'.format(char_xml.info_text))
-            print('    - Decimal Exponent: {}'.format(char_xml.dec_exp))
+        if not args.xml:
+            print('Characteristic Metadata:')
+            for char in args.c:
+                print('Characteristic: {}'.format(char))
+                char_xml = get_XML_CHAR(char)
+                print('    - NAME: {}'.format(char_xml.name))
+                print('    - UUID: {}'.format(char_xml.uuid))
+                print('    - QUANTITY: {}'.format(char_xml.quantity))
+                print('    - UNIT: {}'.format(char_xml.unit))
+                print('    - SYMBOL: {}'.format(char_xml.unit_symbol))
+                print('    - FORMAT: {}'.format(char_xml.data_format))
+                print('    - CTYPE: {}'.format(char_xml.fmt))
+                print('    - TYPE: {}'.format(char_xml.char_type))
+                print('    - Note: {}'.format(char_xml.info_text))
+                print('    - Decimal Exponent: {}'.format(char_xml.dec_exp))
+        else:
+            print('Characteristic Metadata XML:')
+            for char in args.c:
+                print('Characteristic: {}'.format(char))
+                char_xml = get_XML_CHAR(char)
+                print(char_xml._raw)
         sys.exit()
     except Exception as e:
+        print(e)
         print('XML not available or malformed')
         sys.exit()
 
@@ -634,12 +642,12 @@ elif args.m == 'ble':
 # READ/FOLLOW SERVICE
 elif args.m == 'follow':
     print('Following service: {}'.format(args.s))
-    bdev = BASE_BLE_DEVICE(args.t)
-    bdev.connect(n_tries=args.n, show_servs=True, log=False)
+    bdev = BLE_DEVICE(args.t, init=True)
     if not bdev.connected:
         print('Device not reachable try again.')
         sys.exit()
     else:
+        bdev.get_services()
         handler = logging.StreamHandler(sys.stdout)
         handler.setLevel(logging.INFO)
         logging.basicConfig(
@@ -718,7 +726,12 @@ elif args.m == 'follow':
                                 #                                  ble_char_dict[args.s],
                                 #                                  data/args.x, args.u))
                                 else:
-                                    log.debug("Characterisctic {} not readable".format(char))
+                                    if char == 'Battery Power State':
+                                        bdev.get_batt_power_state()
+                                        log.info("{} [{}] : {}".format(serv, char,
+                                                                          ','.join(bdev.batt_power_state.values())))
+                                    else:
+                                        log.debug("Characterisctic {} not readable".format(char))
                         time.sleep(args.tm)
                     except Exception as e:
                         print(e)

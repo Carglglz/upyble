@@ -4,9 +4,10 @@ import asyncio
 import struct
 from bleak import BleakClient
 from bleak import discover
-from upyble.chars import ble_char_dict, ble_char_dict_rev
+from upyble.chars import ble_char_dict, ble_char_dict_rev, get_XML_CHAR
 from upyble.servs import ble_services_dict, ble_services_dict_rev
 from upyble.appearances import ble_appearances_dict, ble_appearances_dict_rev
+from upyble.manufacturer import ble_manufacturer_dict
 import struct
 import uuid as U_uuid
 import time
@@ -803,11 +804,17 @@ class BLE_DEVICE(BASE_BLE_DEVICE):
         self.get_appearance()
         self.MAC_addrs = ''
         self.get_MAC_addrs()
+        self.get_MANUFACTURER()
+        self.read_char_metadata()
+        self.batt_power_state = {'Charging': 'Unkown', 'Discharging': 'Unkown',
+                                 'Level': 'Unkown', 'Present': 'Unkown'}
+        # self.get_batt_power_state()
 
     def get_appearance(self):
         if 'Device Information' in self.services.keys():
-            if '2A01' in self.services['Device Information']['CHARS'].keys():
-                appear_code = self.read_service(key='Device Information', data_fmt='h')[0]
+            if 'Appearance' in self.readables.keys():
+                appear_code = self.read_service(
+                    key='Appearance', data_fmt='h')[0]
                 self.appearance = ble_appearances_dict[appear_code]
         else:
             self.appearance = ble_appearances_dict[self.appearance]
@@ -820,3 +827,63 @@ class BLE_DEVICE(BASE_BLE_DEVICE):
             self.MAC_addrs = MAC_addr
         else:
             self.MAC_addrs = self.UUID
+
+    def get_MANUFACTURER(self):
+        if 'Device Information' in self.services.keys():
+            if 'Manufacturer Name String' in self.readables.keys():
+                man_code = self.read_service(
+                    key='Manufacturer Name String', data_fmt='h')[0]
+                self.manufacturer = ble_manufacturer_dict[man_code]
+        else:
+            pass
+
+    def read_char_metadata(self):
+        for serv in self.services_rsum.keys():
+            for char in self.services_rsum[serv]:
+                if char in self.readables.keys():
+                    try:
+                        self.chars_xml[char] = get_XML_CHAR(char)
+                    except Exception as e:
+                        pass
+
+    def get_batt_power_state(self):
+        if 'Battery Service' in self.services.keys():
+            if 'Battery Power State' in self.readables.keys():
+                pow_skeys = self._unmask_8bit(self.read_service(
+                    key='Battery Power State', data_fmt='B')[0])
+                self.batt_power_state = self.map_powstate(*pow_skeys)
+        else:
+            pass
+
+    def _unmask_8bit(self, _8bit):
+        mask0 = eval('0b11000000')
+        mask1 = eval('0b00110000')
+        mask2 = eval('0b00001100')
+        mask3 = eval('0b00000011')
+        key_0 = (_8bit & mask0) >> 6
+        key_1 = (_8bit & mask1) >> 4
+        key_2 = (_8bit & mask2) >> 2
+        key_3 = (_8bit & mask3) >> 0
+        return [key_0, key_1, key_2, key_3]
+
+    def map_powstate(self, key_present_0, key_discharge_1, key_charge_2,
+                     key_state_level):
+        key_states = {'Present': key_present_0, 'Discharging': key_discharge_1,
+                      'Charging': key_charge_2, 'Level': key_state_level}
+        present_dict = {0: 'Unkown', 1: 'Not Supported',
+                        2: 'Not Present', 3: 'Present'}
+        discharge_dict = {0: 'Unkown', 1: 'Not Supported',
+                          2: 'Not Discharging', 3: 'Discharging'}
+        charge_dict = {0: 'Unkown', 1: 'Not Chargeable',
+                       2: 'Not Charging (Chargeable)',
+                       3: 'Charging (Chargeable)'}
+        level_dict = {0: 'Unkown', 1: 'Not Supported',
+                      2: 'Good Level', 3: 'Critically Low Level'}
+        states_dict = {'Present': present_dict, 'Discharging': discharge_dict,
+                       'Charging': charge_dict, 'Level': level_dict}
+        pow_state = {}
+        for state in states_dict.keys():
+            # print('{}: {}'.format(
+            #     state, states_dict[state][key_states[state]]))
+            pow_state[state] = states_dict[state][key_states[state]]
+        return pow_state

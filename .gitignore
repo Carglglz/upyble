@@ -17,3 +17,7 @@
 /upyutils/ble*
 
 _BLE*
+
+/upyble/*.ipynb
+/upyble/*.txt
+/upyble/*.ipynb_checkpoints

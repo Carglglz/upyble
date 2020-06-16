@@ -286,10 +286,11 @@ ble_char_dict_rev = dict(zip(TK, CK_codes))
 
 
 # XML PARSER --> get char tag and return char_xml class
-
 class CHAR_XML:
     def __init__(self, xml_file):
         self._tree = ET.parse("{}/{}".format(CHARS_XML_DIR, xml_file))
+        with open("{}/{}".format(CHARS_XML_DIR, xml_file), 'rb') as xmlfileraw:
+            self._raw = xmlfileraw.read().decode()
         self._root = self._tree.getroot()
         self.char_metada = None
         self.name = None
@@ -297,6 +298,7 @@ class CHAR_XML:
         self.uuid = None
         self.field_name = None
         self.info_text = None
+        self.note = None
         self.requirment = None
         self.data_format = None
         self.fmt = None
@@ -305,11 +307,18 @@ class CHAR_XML:
         self.unit_symbol = None
         self.quantity = None
         self.unit = None
+        self.abstract = None
+        self.summary = None
+        self.description = None
+        self.minimum = None
+        self.maximum = None
         self.dec_exp = None
+        self.xml_tags = {}
         self.get_data()
 
     def get_data(self):
         for val in self._root.iter():
+            self.xml_tags[val.tag] = [val.text.strip(), val.attrib]
             if val.tag == 'Characteristic':
                 self.char_metada = val.attrib
                 self.name = self.char_metada['name']
@@ -317,9 +326,20 @@ class CHAR_XML:
                 self.uuid = self.char_metada['uuid']
             if val.tag == 'Field':
                 self.field_name = val.attrib['name']
-
+            if val.tag == 'Abstract':
+                self.abstract = val.text.strip()
+            if val.tag == 'Summary':
+                self.summary = val.text.strip()
+            if val.tag == 'Description':
+                self.description = val.text.strip()
+            if val.tag == 'Maximum':
+                self.maximum = val.text.strip()
+            if val.tag == 'Minimum':
+                self.minimum = val.text.strip()
             if val.tag == 'InformativeText':
-                self.info_text = val.text
+                self.info_text = val.text.strip()
+            if val.tag == 'Note':
+                self.note = val.text.strip()
             if val.tag == 'Requirement':
                 self.requirment = val.text
             if val.tag == 'Format':
@@ -328,10 +348,13 @@ class CHAR_XML:
             if val.tag == 'Unit':
                 self.unit_stringcode = val.text
                 # get unit from unit stringcode
-                unit_stringcode_filt = self.unit_stringcode.replace("org.bluetooth.unit.", '')
-                self.quantity = ' '.join(unit_stringcode_filt.split('.')[0].split('_'))
+                unit_stringcode_filt = self.unit_stringcode.replace(
+                    "org.bluetooth.unit.", '')
+                self.quantity = ' '.join(
+                    unit_stringcode_filt.split('.')[0].split('_'))
                 try:
-                    self.unit = ' '.join(unit_stringcode_filt.split('.')[1].split('_'))
+                    self.unit = ' '.join(
+                        unit_stringcode_filt.split('.')[1].split('_'))
                     self.unit_symbol = ble_SI_units_dict[self.unit]
                 except Exception as e:
                     try:
@@ -346,6 +369,7 @@ class CHAR_XML:
 
 
 def get_XML_CHAR(char):
-    char_string = "_".join([ch.lower().replace('-', ' ') for ch in char.split()])
+    char_string = "_".join([ch.lower().replace('-', ' ')
+                            for ch in char.split()])
     char_string += '.xml'
     return CHAR_XML(char_string)

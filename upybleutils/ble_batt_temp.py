@@ -9,6 +9,7 @@ import time
 from ble_advertising import advertising_payload
 from machine import ADC, Pin, Timer
 from micropython import const
+from array import array
 import esp32
 
 _IRQ_CENTRAL_CONNECT = const(1 << 0)
@@ -19,11 +20,15 @@ _BATT_SERV_UUID = bluetooth.UUID(0x180F)
 # org.bluetooth.characteristic.temperature
 _BATT_CHAR = (
     bluetooth.UUID(0x2A19),
+    bluetooth.FLAG_READ,
+)
+_BATT_CHAR_POW = (
+    bluetooth.UUID(0x2A1A),
     bluetooth.FLAG_READ | bluetooth.FLAG_NOTIFY,
 )
 _BATT_SERV_SERVICE = (
     _BATT_SERV_UUID,
-    (_BATT_CHAR,),
+    (_BATT_CHAR, _BATT_CHAR_POW),
 )
 
 # org.bluetooth.service.enviromental_sensing
@@ -67,10 +72,15 @@ class BLE_Battery_Temp:
         self.bat_timer = Timer(-1)
         self.irq_busy = False
         self.i = 0
+        bat_volt = round(((self.bat.read()*2)/4095)*3.6, 2)
+        percentage = int(round((bat_volt - 3.3) / (4.23 - 3.3) * 100, 1))
+        self.batt_buffer = array('B', (percentage for _ in range(30)))
+        self.buffer_index = 0
+        self.batt_pow_state = [3, 3, 2, 3]  # Present, Discharging, Not Charging, Good Level
         self._ble = ble
         self._ble.active(True)
         self._ble.irq(handler=self._irq)
-        ((self._appear, self._manufact,), (self._handle,), (self._temp,)) = self._ble.gatts_register_services(
+        ((self._appear, self._manufact,), (self._handle, self._lev), (self._temp,)) = self._ble.gatts_register_services(
             (_DEV_INF_SERV_SERVICE, _BATT_SERV_SERVICE, _TEMP_SERV_SERVICE))
         self._connections = set()
         self._payload = advertising_payload(
@@ -82,6 +92,7 @@ class BLE_Battery_Temp:
             "h", _ADV_APPEARANCE_GENERIC_THERMOMETER))
         self._ble.gatts_write(self._manufact, struct.pack(
             "h", _MANUFACT_ESPRESSIF))
+        self._ble.gatts_write(self._lev, self._mask_8bit(*self.batt_pow_state))
 
     def _irq(self, event, data):
         # Track connections so we can send notifications.
@@ -99,18 +110,40 @@ class BLE_Battery_Temp:
         # Write the local value, ready for a central to read.
         bat_volt = round(((self.bat.read()*2)/4095)*3.6, 2)
         percentage = int(round((bat_volt - 3.3) / (4.23 - 3.3) * 100, 1))
+        if self.buffer_index >= 30:
+            self.buffer_index = 0
+        self.batt_buffer[self.buffer_index] = percentage
+        mpercentage = int(sum(self.batt_buffer)/len(self.batt_buffer))
+        self.buffer_index += 1
         self._ble.gatts_write(self._handle, struct.pack(
-            "B", percentage))
+            "B", mpercentage))
+        # if notify:
+        #     for conn_handle in self._connections:
+        #         # Notify connected centrals to issue a read.
+        #         self._ble.gatts_notify(conn_handle, self._handle)
         if notify:
-            for conn_handle in self._connections:
-                # Notify connected centrals to issue a read.
-                self._ble.gatts_notify(conn_handle, self._handle)
+            if mpercentage > 35:
+                self.batt_pow_state = [3, 3, 3, 2]
+                self._ble.gatts_write(self._lev, self._mask_8bit(*self.batt_pow_state))
+                for conn_handle in self._connections:
+                    self._ble.gatts_notify(conn_handle, self._lev)
+            if mpercentage < 35:
+                self.batt_pow_state = [3, 3, 3, 3]
+                self._ble.gatts_write(self._lev, self._mask_8bit(*self.batt_pow_state))
+                for conn_handle in self._connections:
+                    self._ble.gatts_notify(conn_handle, self._lev)
         bat_temp = int(round((esp32.raw_temperature()-32)/1.8, 2)*100)
         self._ble.gatts_write(self._temp, struct.pack(
             "<h", bat_temp))
 
     def _advertise(self, interval_us=500000):
         self._ble.gap_advertise(interval_us, adv_data=self._payload)
+
+    def _mask_8bit(self, key0, key1, key2, key3):
+        bin_byte = bin((key0 << 6)+(key1 << 4)+(key2 << 2) + key3)
+        int_byte = eval(bin_byte)
+        packed = struct.pack('B', int_byte)
+        return packed
 
     def batt_callback(self, x):
         if self.irq_busy:

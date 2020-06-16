@@ -7,7 +7,8 @@ amount of substance,mole,mol
 luminous intensity,candela,cd
 area,square meter,m2
 volume,cubic meter,m3
-speed, velocity,meter per second,m/s
+speed,meter per second,m/s
+velocity,metres per second,m/s
 acceleration,meter per second squared  ,m/s2
 wave number,reciprocal meter,m-1
 mass density,kilogram per cubic meter,kg/m3
@@ -63,3 +64,11 @@ radiant intensity,watt per steradian,W/sr
 radiance,watt per square meter steradian,W/(m2·sr)
 catalytic (activity) concentration,katal per cubic meter,kat/m3
 percentage,percentage,%
+period,beats per minute,bpm
+time,year,Y
+time,month,M
+time,day,D
+irradiance,watt per square metre,W/m^2
+plane angle,degree,º
+thermodynamic temperature,degree fahrenheit,ºF
+logarithmic radio quantity,decibel,dBm
