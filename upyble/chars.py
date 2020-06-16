@@ -318,7 +318,10 @@ class CHAR_XML:
 
     def get_data(self):
         for val in self._root.iter():
-            self.xml_tags[val.tag] = [val.text.strip(), val.attrib]
+            if hasattr(val.text, 'strip'):
+                self.xml_tags[val.tag] = [val.text.strip(), val.attrib]
+            else:
+                self.xml_tags[val.tag] = [val.text, val.attrib]
             if val.tag == 'Characteristic':
                 self.char_metada = val.attrib
                 self.name = self.char_metada['name']
@@ -327,19 +330,40 @@ class CHAR_XML:
             if val.tag == 'Field':
                 self.field_name = val.attrib['name']
             if val.tag == 'Abstract':
-                self.abstract = val.text.strip()
+                if hasattr(val.text, 'strip'):
+                    self.abstract = val.text.strip()
+                else:
+                    self.abstract = val.text
             if val.tag == 'Summary':
-                self.summary = val.text.strip()
+                if hasattr(val.text, 'strip'):
+                    self.summary = val.text.strip()
+                else:
+                    self.summary = val.text
             if val.tag == 'Description':
-                self.description = val.text.strip()
+                if hasattr(val.text, 'strip'):
+                    self.description = val.text.strip()
+                else:
+                    self.description = val.text
             if val.tag == 'Maximum':
-                self.maximum = val.text.strip()
+                if hasattr(val.text, 'strip'):
+                    self.maximum = val.text.strip()
+                else:
+                    self.maximum = val.text
             if val.tag == 'Minimum':
-                self.minimum = val.text.strip()
+                if hasattr(val.text, 'strip'):
+                    self.minimum = val.text.strip()
+                else:
+                    self.minimum = val.text
             if val.tag == 'InformativeText':
-                self.info_text = val.text.strip()
+                if hasattr(val.text, 'strip'):
+                    self.info_text = val.text.strip()
+                else:
+                    self.info_text = val.text
             if val.tag == 'Note':
-                self.note = val.text.strip()
+                if hasattr(val.text, 'strip'):
+                    self.note = val.text.strip()
+                else:
+                    self.note = val.text
             if val.tag == 'Requirement':
                 self.requirment = val.text
             if val.tag == 'Format':

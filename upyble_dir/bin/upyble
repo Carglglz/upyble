@@ -10,6 +10,7 @@ import time
 import signal
 import shlex
 import logging
+import traceback
 # from binascii import hexlify
 import subprocess
 import argcomplete
@@ -532,8 +533,15 @@ if args.m == 'cmdata':
                         print('    - MINIMUM: {}'.format(char_xml.minimum))
                         print('    - DECIMAL EXPONENT: {}'.format(char_xml.dec_exp))
                         print('    - NOTE: {}'.format(char_xml.note))
+                        print('')
+                        print('━'*50)
+                        print('')
                     except Exception as e:
-                        print('XML not available or malformed')
+                        print(traceback.format_exc())
+                        print('Characteristic: {} XML not available or malformed'.format(char))
+                        print('')
+                        print('━'*50)
+                        print('')
 
             else:
 
@@ -557,6 +565,7 @@ if args.m == 'cmdata':
                     print('    - MINIMUM: {}'.format(char_xml.minimum))
                     print('    - DECIMAL EXPONENT: {}'.format(char_xml.dec_exp))
                     print('    - NOTE: {}'.format(char_xml.note))
+
         else:
             for char in args.c:
                 print('Characteristic: {}'.format(char))
@@ -572,6 +581,7 @@ if args.m == 'cmdata':
                     # print('<-----Characteristic Metadata XML---->')
                     print(get_raw_XML_CHAR(char))
             else:
+                print(e)
                 print('XML not available or malformed')
         except Exception as e:
             print(e)
