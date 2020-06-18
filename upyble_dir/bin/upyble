@@ -736,7 +736,7 @@ elif args.m == 'follow':
                             scale = args.x
                             if CHARS_XML_AUTO[char].dec_exp is not None:
                                 scale = 1/(10**CHARS_XML_AUTO[char].dec_exp)
-                            data = bdev.read_service(key=char, data_fmt=CHARS_XML_AUTO[char].fmt)[0]
+                            data = bdev.read_service(key=char, data_fmt=CHARS_XML_AUTO[char].fmt)
                             log.info("{} [{}] : {} {}".format(args.s, char,
                                                               data/scale, CHARS_XML_AUTO[char].unit_symbol))
 
@@ -769,9 +769,19 @@ elif args.m == 'follow':
                                 if char in list(CHARS_XML_AUTO.keys()):
                                     if CHARS_XML_AUTO[char].dec_exp is not None:
                                         scale = 1/(10**CHARS_XML_AUTO[char].dec_exp)
-                                    data = bdev.read_service(key=char, data_fmt=CHARS_XML_AUTO[char].fmt)[0]
-                                    log.info("{} [{}] : {} {}".format(serv, char,
-                                                                      data/scale, CHARS_XML_AUTO[char].unit_symbol))
+                                    log.info('Reading : {}'.format(char))
+                                    data = bdev.read_service(key=char, data_fmt=CHARS_XML_AUTO[char].fmt)
+                                    if isinstance(data, str):
+                                        log.info("{} [{}] : {} {}".format(serv, char,
+                                                                          data, CHARS_XML_AUTO[char].unit_symbol))
+                                    else:
+                                        if char == 'Battery Power State':
+                                            bdev.get_batt_power_state()
+                                            log.info("{} [{}] : {}".format(serv, char,
+                                                                              ','.join(bdev.batt_power_state.values())))
+                                        else:
+                                            log.info("{} [{}] : {} {}".format(serv, char,
+                                                                          data/scale, CHARS_XML_AUTO[char].unit_symbol))
 
                                 # elif args.s in servs_values:
                                 #     data = bdev.read_service(uuid=args.s, data_fmt=args.fmt)[0]
@@ -779,15 +789,11 @@ elif args.m == 'follow':
                                 #                                  ble_char_dict[args.s],
                                 #                                  data/args.x, args.u))
                                 else:
-                                    if char == 'Battery Power State':
-                                        bdev.get_batt_power_state()
-                                        log.info("{} [{}] : {}".format(serv, char,
-                                                                          ','.join(bdev.batt_power_state.values())))
-                                    else:
-                                        log.debug("Characterisctic {} not readable".format(char))
+                                    log.debug("Characterisctic {} not readable".format(char))
                         time.sleep(args.tm)
                     except Exception as e:
                         print(e)
+                        time.sleep(args.tm)
                     except KeyboardInterrupt:
                         break
         bdev.disconnect()
@@ -831,12 +837,12 @@ elif args.m == 'rfollow':
                 try:
                     for char in chars_to_read:
                         if char in list(bdev.readables.keys()):
-                            data = bdev.read_service(key=char, data_fmt=args.fmt)[0]
+                            data = bdev.read_service(key=char, data_fmt=args.fmt)
                             log.info("{} [{}] : {} {}".format(args.s, char,
                                                               data/args.x, args.u))
 
                         elif args.s in servs_values:
-                            data = bdev.read_service(uuid=args.s, data_fmt=args.fmt)[0]
+                            data = bdev.read_service(uuid=args.s, data_fmt=args.fmt)
                             log.info("{} [{}] : {} {}".format(servs_keys[servs_values.index(args.s)],
                                                          ble_char_dict[args.s],
                                                          data/args.x, args.u))

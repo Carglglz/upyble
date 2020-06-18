@@ -492,7 +492,12 @@ class BASE_BLE_DEVICE:
 
     def read_service(self, key=None, uuid=None, data_fmt="<h"):
         try:
-            return struct.unpack(data_fmt, self.read_service_raw(key=key, uuid=uuid))
+            if data_fmt == 'utf8':
+                data = self.read_service_raw(key=key, uuid=uuid).decode('utf8')
+                return data
+            else:
+                data, = struct.unpack(data_fmt, self.read_service_raw(key=key, uuid=uuid))
+                return data
         except Exception as e:
             print(e)
 
@@ -801,41 +806,102 @@ class BLE_DEVICE(BASE_BLE_DEVICE):
     def __init__(self, scan_dev, init=False, name=None, lenbuff=100):
         super().__init__(scan_dev, init=init, name=name, lenbuff=lenbuff)
         self.appearance = 0
+        self.manufacturer = 'UNKNOWN'
+        self.model_number = 'UNKNOWN'
+        self.firmware_rev = 'UNKNOWN'
+        self._devinfoserv = 'Device Information'
+        self.device_info = {}
+        self.chars_xml = {}
         self.get_appearance()
         self.MAC_addrs = ''
         self.get_MAC_addrs()
-        self.get_MANUFACTURER()
         self.read_char_metadata()
-        self.batt_power_state = {'Charging': 'Unkown', 'Discharging': 'Unkown',
-                                 'Level': 'Unkown', 'Present': 'Unkown'}
-        # self.get_batt_power_state()
+        self.get_MANUFACTURER()
+        self.get_MODEL_NUMBER()
+        self.get_FIRMWARE_REV()
+        self.batt_power_state = {'Charging': 'Unknown', 'Discharging': 'Unknown',
+                                 'Level': 'Unknown', 'Present': 'Unknown'}
+        self.get_batt_power_state()
 
     def get_appearance(self):
-        if 'Device Information' in self.services.keys():
-            if 'Appearance' in self.readables.keys():
-                appear_code = self.read_service(
-                    key='Appearance', data_fmt='h')[0]
-                self.appearance = ble_appearances_dict[appear_code]
+        APPR = 'Appearance'
+        if self._devinfoserv in self.services.keys():
+            if APPR in self.readables.keys():
+                try:
+                    appear_code = self.read_service(
+                        key=APPR, data_fmt='h')
+                    self.appearance = ble_appearances_dict[appear_code]
+                    self.device_info[APPR] = self.appearance
+                except Exception as e:
+                    try:
+                        appear_code = self.read_service(
+                            key='Appearance', data_fmt='c')
+                        self.appearance = ble_appearances_dict[appear_code]
+                        self.device_info[APPR] = self.appearance
+                    except Exception as e:
+                        self.appearance = ble_appearances_dict[self.appearance]
+                        self.device_info[APPR] = self.appearance
+                    # pass
         else:
             self.appearance = ble_appearances_dict[self.appearance]
+            self.device_info[APPR] = self.appearance
 
     def get_MAC_addrs(self):
         if '-' in self.UUID:
             byteaddr = U_uuid.UUID(self.UUID)
-            hexaddr = hex(sum([val for val in struct.unpack("I"*4, byteaddr.bytes)])).replace('0', '', 1)
-            MAC_addr = 'uu:'+':'.join([hexaddr[i:i+2] for i in range(0, len(hexaddr), 2)])
+            hexaddr = hex(sum([val for val in struct.unpack(
+                "I"*4, byteaddr.bytes)])).replace('0', '', 1)
+            MAC_addr = 'uu:'+':'.join([hexaddr[i:i+2]
+                                       for i in range(0, len(hexaddr), 2)])
             self.MAC_addrs = MAC_addr
         else:
             self.MAC_addrs = self.UUID
 
     def get_MANUFACTURER(self):
-        if 'Device Information' in self.services.keys():
-            if 'Manufacturer Name String' in self.readables.keys():
-                man_code = self.read_service(
-                    key='Manufacturer Name String', data_fmt='h')[0]
-                self.manufacturer = ble_manufacturer_dict[man_code]
+        MNS = 'Manufacturer Name String'
+        if self._devinfoserv in self.services.keys():
+            if MNS in self.readables.keys():
+                try:
+                    man_string = self.read_service(
+                        key=MNS, data_fmt=self.chars_xml[MNS].fmt)
+                    self.manufacturer = man_string
+                    self.device_info[MNS] = self.manufacturer
+                except Exception as e:
+                    self.device_info[MNS] = self.manufacturer
+                    print(e)
         else:
-            pass
+            self.device_info[MNS] = self.manufacturer
+
+    def get_MODEL_NUMBER(self):
+        MNS = 'Model Number String'
+        if self._devinfoserv in self.services.keys():
+            MNS = 'Model Number String'
+            if MNS in self.chars_xml.keys():
+                try:
+                    model_string = self.read_service(
+                        key=MNS, data_fmt=self.chars_xml[MNS].fmt)
+                    self.model_number = model_string
+                    self.device_info[MNS] = self.model_number
+                except Exception as e:
+                    self.device_info[MNS] = self.model_number
+                    print(e)
+        else:
+            self.device_info[MNS] = self.model_number
+
+    def get_FIRMWARE_REV(self):
+        FMW = 'Firmware Revision String'
+        if self._devinfoserv in self.services.keys():
+            if FMW in self.chars_xml.keys():
+                try:
+                    firmware_string = self.read_service(
+                        key=FMW, data_fmt=self.chars_xml[FMW].fmt)
+                    self.firmware_rev = firmware_string
+                    self.device_info[FMW] = self.firmware_rev
+                except Exception as e:
+                    self.device_info[FMW] = self.firmware_rev
+                    print(e)
+        else:
+            self.device_info[FMW] = self.firmware_rev
 
     def read_char_metadata(self):
         for serv in self.services_rsum.keys():
@@ -849,11 +915,15 @@ class BLE_DEVICE(BASE_BLE_DEVICE):
     def get_batt_power_state(self):
         if 'Battery Service' in self.services.keys():
             if 'Battery Power State' in self.readables.keys():
-                pow_skeys = self._unmask_8bit(self.read_service(
-                    key='Battery Power State', data_fmt='B')[0])
-                self.batt_power_state = self.map_powstate(*pow_skeys)
+                self.unpack_batt_power_state(self.read_service(
+                    key='Battery Power State', data_fmt='B'))
+
         else:
             pass
+
+    def unpack_batt_power_state(self, data):
+        pow_skeys = self._unmask_8bit(data)
+        self.batt_power_state = self.map_powstate(*pow_skeys)
 
     def _unmask_8bit(self, _8bit):
         mask0 = eval('0b11000000')
@@ -870,14 +940,14 @@ class BLE_DEVICE(BASE_BLE_DEVICE):
                      key_state_level):
         key_states = {'Present': key_present_0, 'Discharging': key_discharge_1,
                       'Charging': key_charge_2, 'Level': key_state_level}
-        present_dict = {0: 'Unkown', 1: 'Not Supported',
+        present_dict = {0: 'Unknown', 1: 'Not Supported',
                         2: 'Not Present', 3: 'Present'}
-        discharge_dict = {0: 'Unkown', 1: 'Not Supported',
+        discharge_dict = {0: 'Unknown', 1: 'Not Supported',
                           2: 'Not Discharging', 3: 'Discharging'}
-        charge_dict = {0: 'Unkown', 1: 'Not Chargeable',
+        charge_dict = {0: 'Unknown', 1: 'Not Chargeable',
                        2: 'Not Charging (Chargeable)',
                        3: 'Charging (Chargeable)'}
-        level_dict = {0: 'Unkown', 1: 'Not Supported',
+        level_dict = {0: 'Unknown', 1: 'Not Supported',
                       2: 'Good Level', 3: 'Critically Low Level'}
         states_dict = {'Present': present_dict, 'Discharging': discharge_dict,
                        'Charging': charge_dict, 'Level': level_dict}

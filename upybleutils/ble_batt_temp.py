@@ -10,6 +10,8 @@ from ble_advertising import advertising_payload
 from machine import ADC, Pin, Timer
 from micropython import const
 from array import array
+import os
+import sys
 import esp32
 
 _IRQ_CENTRAL_CONNECT = const(1 << 0)
@@ -55,14 +57,29 @@ _MANUFACT_CHAR = (
     bluetooth.UUID(0x2A29),
     bluetooth.FLAG_READ
 )
-_DEV_INF_SERV_SERVICE = (
-    _DEV_INF_SERV_UUID,
-    (_APPEAR_CHAR, _MANUFACT_CHAR,),
-)
+
 # org.bluetooth.characteristic.gap.appearance.xml
 _ADV_APPEARANCE_GENERIC_THERMOMETER = const(768)
 
 _MANUFACT_ESPRESSIF = const(741)
+
+systeminfo = os.uname()
+_MODEL_NUMBER = systeminfo.sysname
+_FIRMWARE_REV = "{}-{}".format(sys.implementation[0], systeminfo.release)
+
+_MODEL_NUMBER_CHAR = (
+        bluetooth.UUID(0x2A24),
+        bluetooth.FLAG_READ)
+
+_FIRMWARE_REV_CHAR = (
+        bluetooth.UUID(0x2A26),
+        bluetooth.FLAG_READ)
+
+_DEV_INF_SERV_SERVICE = (
+    _DEV_INF_SERV_UUID,
+    (_APPEAR_CHAR, _MANUFACT_CHAR,
+     _MODEL_NUMBER_CHAR, _FIRMWARE_REV_CHAR),
+)
 
 
 class BLE_Battery_Temp:
@@ -80,7 +97,7 @@ class BLE_Battery_Temp:
         self._ble = ble
         self._ble.active(True)
         self._ble.irq(handler=self._irq)
-        ((self._appear, self._manufact,), (self._handle, self._lev), (self._temp,)) = self._ble.gatts_register_services(
+        ((self._appear, self._manufact, self._model, self._firm), (self._handle, self._lev), (self._temp,)) = self._ble.gatts_register_services(
             (_DEV_INF_SERV_SERVICE, _BATT_SERV_SERVICE, _TEMP_SERV_SERVICE))
         self._connections = set()
         self._payload = advertising_payload(
@@ -90,8 +107,9 @@ class BLE_Battery_Temp:
         self._advertise()
         self._ble.gatts_write(self._appear, struct.pack(
             "h", _ADV_APPEARANCE_GENERIC_THERMOMETER))
-        self._ble.gatts_write(self._manufact, struct.pack(
-            "h", _MANUFACT_ESPRESSIF))
+        self._ble.gatts_write(self._manufact, bytes('Espressif Incorporated', 'utf8'))
+        self._ble.gatts_write(self._model, bytes(_MODEL_NUMBER, 'utf8'))
+        self._ble.gatts_write(self._firm, bytes(_FIRMWARE_REV, 'utf8'))
         self._ble.gatts_write(self._lev, self._mask_8bit(*self.batt_pow_state))
 
     def _irq(self, event, data):

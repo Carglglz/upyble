@@ -72,5 +72,5 @@ irradiance,watt per square metre,W/m^2
 plane angle,degree,º
 thermodynamic temperature,degree fahrenheit,ºF
 logarithmic radio quantity,decibel,dBm
-velocity,kilometre per hour, km/h
-concentration, count per cubic metre, 1/m^3
+velocity,kilometre per hour,km/h
+concentration,count per cubic metre,1/m^3
