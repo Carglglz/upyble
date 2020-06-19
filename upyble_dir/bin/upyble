@@ -737,8 +737,17 @@ elif args.m == 'follow':
                             if CHARS_XML_AUTO[char].dec_exp is not None:
                                 scale = 1/(10**CHARS_XML_AUTO[char].dec_exp)
                             data = bdev.read_service(key=char, data_fmt=CHARS_XML_AUTO[char].fmt)
-                            log.info("{} [{}] : {} {}".format(args.s, char,
-                                                              data/scale, CHARS_XML_AUTO[char].unit_symbol))
+                            if isinstance(data, str):
+                                log.info("{} [{}] : {} {}".format(args.s, char,
+                                                                  data, CHARS_XML_AUTO[char].unit_symbol))
+                            else:
+                                if char == 'Battery Power State':
+                                    bdev.get_batt_power_state()
+                                    log.info("{} [{}] : {}".format(args.s, char,
+                                                                      ','.join(bdev.batt_power_state.values())))
+                                else:
+                                    log.info("{} [{}] : {} {}".format(args.s, char,
+                                                                  data/scale, CHARS_XML_AUTO[char].unit_symbol))
 
                         # elif args.s in servs_values:
                         #     data = bdev.read_service(uuid=args.s, data_fmt=args.fmt)[0]
@@ -769,7 +778,7 @@ elif args.m == 'follow':
                                 if char in list(CHARS_XML_AUTO.keys()):
                                     if CHARS_XML_AUTO[char].dec_exp is not None:
                                         scale = 1/(10**CHARS_XML_AUTO[char].dec_exp)
-                                    log.info('Reading : {}'.format(char))
+                                    # log.info('Reading : {}'.format(char))
                                     data = bdev.read_service(key=char, data_fmt=CHARS_XML_AUTO[char].fmt)
                                     if isinstance(data, str):
                                         log.info("{} [{}] : {} {}".format(serv, char,

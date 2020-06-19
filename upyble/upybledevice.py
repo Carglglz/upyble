@@ -926,20 +926,20 @@ class BLE_DEVICE(BASE_BLE_DEVICE):
         self.batt_power_state = self.map_powstate(*pow_skeys)
 
     def _unmask_8bit(self, _8bit):
-        mask0 = eval('0b11000000')
-        mask1 = eval('0b00110000')
-        mask2 = eval('0b00001100')
-        mask3 = eval('0b00000011')
-        key_0 = (_8bit & mask0) >> 6
-        key_1 = (_8bit & mask1) >> 4
-        key_2 = (_8bit & mask2) >> 2
-        key_3 = (_8bit & mask3) >> 0
-        return [key_0, key_1, key_2, key_3]
+        mask3 = eval('0b11000000')
+        mask2 = eval('0b00110000')
+        mask1 = eval('0b00001100')
+        mask0 = eval('0b00000011')
+        key_3 = (_8bit & mask3) >> 6
+        key_2 = (_8bit & mask2) >> 4
+        key_1 = (_8bit & mask1) >> 2
+        key_0 = (_8bit & mask0) >> 0
+        return [key_3, key_2, key_1, key_0]
 
-    def map_powstate(self, key_present_0, key_discharge_1, key_charge_2,
-                     key_state_level):
-        key_states = {'Present': key_present_0, 'Discharging': key_discharge_1,
-                      'Charging': key_charge_2, 'Level': key_state_level}
+    def map_powstate(self, key_state_level, key_charge_2, key_discharge_1,
+                     key_present_0):
+        key_states = {'Battery Power Information': key_present_0, 'Discharging State': key_discharge_1,
+                      'Charging State': key_charge_2, 'Level': key_state_level}
         present_dict = {0: 'Unknown', 1: 'Not Supported',
                         2: 'Not Present', 3: 'Present'}
         discharge_dict = {0: 'Unknown', 1: 'Not Supported',
@@ -949,8 +949,8 @@ class BLE_DEVICE(BASE_BLE_DEVICE):
                        3: 'Charging (Chargeable)'}
         level_dict = {0: 'Unknown', 1: 'Not Supported',
                       2: 'Good Level', 3: 'Critically Low Level'}
-        states_dict = {'Present': present_dict, 'Discharging': discharge_dict,
-                       'Charging': charge_dict, 'Level': level_dict}
+        states_dict = {'Battery Power Information': present_dict, 'Discharging State': discharge_dict,
+                       'Charging State': charge_dict, 'Level': level_dict}
         pow_state = {}
         for state in states_dict.keys():
             # print('{}: {}'.format(
