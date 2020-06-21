@@ -19,6 +19,11 @@ def get_xml_file(xml_link):
     org_b_char = xml_link.split('/')[-1]
     char_filename = org_b_char.replace("org.bluetooth.characteristic.", '')
     print('Downloading {} ...'.format(org_b_char))
+    if "appearance" in xml_link:
+        xml_link = xml_link.replace("appearance", "gap.appearance")
+
+    else:
+        pass
     curl_cmd_str = "curl {} --output {}".format(xml_link, XML_CHAR_DIR.format(char_filename))
     curl_cmd = shlex.split(curl_cmd_str)
     try:

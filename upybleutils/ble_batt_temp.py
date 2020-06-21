@@ -141,7 +141,7 @@ class BLE_Battery_Temp:
         #         self._ble.gatts_notify(conn_handle, self._handle)
         if notify:
             if mpercentage > 35:
-                self.batt_pow_state = [3, 3, 3, 2]
+                self.batt_pow_state = [2, 3, 3, 2]
                 self._ble.gatts_write(self._lev, self._mask_8bit(*self.batt_pow_state))
                 for conn_handle in self._connections:
                     self._ble.gatts_notify(conn_handle, self._lev)
