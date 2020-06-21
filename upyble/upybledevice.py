@@ -8,6 +8,7 @@ from upyble.chars import ble_char_dict, ble_char_dict_rev, get_XML_CHAR
 from upyble.servs import ble_services_dict, ble_services_dict_rev
 from upyble.appearances import ble_appearances_dict, ble_appearances_dict_rev
 from upyble.manufacturer import ble_manufacturer_dict
+from upyble.descriptors import ble_descriptors_dict
 import struct
 import uuid as U_uuid
 import time
@@ -386,7 +387,7 @@ class BASE_BLE_DEVICE:
     # SERVICES
     def get_services(self, log=True):
         for service in self.ble_client.services:
-            if service.description == 'Unknown' or service.uuid in list(NUS.keys()):
+            if service.description == 'Unknown' and service.uuid in list(NUS.keys()):
                 is_NUS = True
                 if log:
                     print("[Service] {0}: {1}".format(
@@ -449,8 +450,9 @@ class BASE_BLE_DEVICE:
                 if log:
                     for descriptor in char.descriptors:
                         print(
-                            "\t\t[Descriptor] {0}: (Handle: {1}) ".format(
-                                descriptor.uuid, descriptor.handle
+                            "\t\t[Descriptor] [{0}] {1}: (Handle: {2}) ".format(
+                                descriptor.uuid, ble_descriptors_dict[descriptor.uuid],
+                                descriptor.handle
                             )
                         )
         self.services_rsum = {key: [list(list(val['CHARS'].values())[i].keys())[0] for i in range(
