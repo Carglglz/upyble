@@ -26,7 +26,7 @@
 	<title>404 | Bluetooth® Technology Website</title>
 
 <!-- The SEO Framework by Sybre Waaijer -->
-<!-- / The SEO Framework by Sybre Waaijer | 0.43ms meta | 0.80ms boot -->
+<!-- / The SEO Framework by Sybre Waaijer | 0.18ms meta | 1.38ms boot -->
 
 
 <script>
@@ -109,11 +109,11 @@ jQuery(document).ready(function(jQuery){jQuery.datepicker.setDefaults({"closeTex
     				}
     			}
     		</style><style type="text/css">.saboxplugin-wrap{ border-top-style:solid !important; border-top-color:#eee !important; border-bottom-style:solid !important; border-bottom-color:#eee !important; border-left-style:solid !important; border-left-color:#eee !important; border-right-style:solid !important; border-right-color:#eee !important;}.saboxplugin-authorname .sabox-job-title{font-size:12px;opacity:.7;display: inline-block;margin-left: 10px;}</style>
-<link rel="alternate" hreflang="en" href="https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Characteristics/org.bluetooth.characteristic.object_last"/>
-<link rel="alternate" hreflang="zh-cn" href="https://www.bluetooth.com/zh-cn/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Characteristics/org.bluetooth.characteristic.object_last"/>
-<link rel="alternate" hreflang="ja-jp" href="https://www.bluetooth.com/ja-jp/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Characteristics/org.bluetooth.characteristic.object_last"/>
-<link rel="alternate" hreflang="ko-kr" href="https://www.bluetooth.com/ko-kr/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Characteristics/org.bluetooth.characteristic.object_last"/>
-<link rel="alternate" hreflang="de" href="https://www.bluetooth.com/de/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Characteristics/org.bluetooth.characteristic.object_last"/>
+<link rel="alternate" hreflang="en" href="https://www.bluetooth.com/404"/>
+<link rel="alternate" hreflang="zh-cn" href="https://www.bluetooth.com/zh-cn/404"/>
+<link rel="alternate" hreflang="ja-jp" href="https://www.bluetooth.com/ja-jp/404"/>
+<link rel="alternate" hreflang="ko-kr" href="https://www.bluetooth.com/ko-kr/404"/>
+<link rel="alternate" hreflang="de" href="https://www.bluetooth.com/de/404"/>
 		<script>
 			document.documentElement.className = document.documentElement.className.replace( 'no-js', 'js' );
 		</script>
@@ -180,11 +180,11 @@ jQuery(document).ready(function(jQuery){jQuery.datepicker.setDefaults({"closeTex
 		<button type="button" class="dropdown-toggle" data-toggle="dropdown">Language</button>
 		<div class="dropdown-menu dropdown-menu-right">
 			<div class="inner">
-									<a class="dropdown-item " href="https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Characteristics/org.bluetooth.characteristic.object_last" data-lang="">English</a>
-									<a class="dropdown-item " href="https://www.bluetooth.com/zh-cn/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Characteristics/org.bluetooth.characteristic.object_last" data-lang="zh-cn">中文简体</a>
-									<a class="dropdown-item " href="https://www.bluetooth.com/de/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Characteristics/org.bluetooth.characteristic.object_last" data-lang="de">Deutsch</a>
-									<a class="dropdown-item " href="https://www.bluetooth.com/ja-jp/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Characteristics/org.bluetooth.characteristic.object_last" data-lang="ja-jp">日本語</a>
-									<a class="dropdown-item " href="https://www.bluetooth.com/ko-kr/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Characteristics/org.bluetooth.characteristic.object_last" data-lang="ko-kr">한국어</a>
+									<a class="dropdown-item " href="https://www.bluetooth.com/404" data-lang="">English</a>
+									<a class="dropdown-item " href="https://www.bluetooth.com/zh-cn/404" data-lang="zh-cn">中文简体</a>
+									<a class="dropdown-item " href="https://www.bluetooth.com/de/404" data-lang="de">Deutsch</a>
+									<a class="dropdown-item " href="https://www.bluetooth.com/ja-jp/404" data-lang="ja-jp">日本語</a>
+									<a class="dropdown-item " href="https://www.bluetooth.com/ko-kr/404" data-lang="ko-kr">한국어</a>
 							</div>
 		</div>
 	</div>
@@ -3860,7 +3860,7 @@ jQuery(document).ready(function(jQuery){jQuery.datepicker.setDefaults({"closeTex
 <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KKW3BWZ" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- End Google Tag Manager (noscript) --><script type='text/javascript'>
 /* <![CDATA[ */
-var cnArgs = {"ajaxUrl":"https:\/\/www.bluetooth.com\/wp-admin\/admin-ajax.php","nonce":"90cfe265c8","hideEffect":"fade","position":"bottom","onScroll":"1","onScrollOffset":"200","onClick":"0","cookieName":"cookie_notice_accepted","cookieTime":"31536000","cookieTimeRejected":"2592000","cookiePath":"\/","cookieDomain":"","redirection":"0","cache":"1","refuse":"0","revokeCookies":"0","revokeCookiesOpt":"automatic","secure":"1","coronabarActive":"0"};
+var cnArgs = {"ajaxUrl":"https:\/\/www.bluetooth.com\/wp-admin\/admin-ajax.php","nonce":"bca4ea7745","hideEffect":"fade","position":"bottom","onScroll":"1","onScrollOffset":"200","onClick":"0","cookieName":"cookie_notice_accepted","cookieTime":"31536000","cookieTimeRejected":"2592000","cookiePath":"\/","cookieDomain":"","redirection":"0","cache":"1","refuse":"0","revokeCookies":"0","revokeCookiesOpt":"automatic","secure":"1","coronabarActive":"0"};
 /* ]]> */
 </script>
 <script type='text/javascript' src='https://3pl46c46ctx02p7rzdsvsg21-wpengine.netdna-ssl.com/wp-content/plugins/cookie-notice/js/front.min.js?ver=1.3.2'></script>
@@ -3906,6 +3906,6 @@ var themeData = {"baseUrl":"https:\/\/www.bluetooth.com","themeUrl":"https:\/\/w
 	});
 </script>
 	
-<!--Weglot 3.1.7--><aside data-wg-notranslate class='country-selector weglot-inline weglot-default'><input id="wg15926950625eee9916dff21894" class="weglot_choice" type="checkbox" name="menu"/><label for="wg15926950625eee9916dff21894" class="wgcurrent wg-li weglot-lang weglot-language flag-0 en" data-code-language="en"><span></span></label><ul><li class="wg-li weglot-lang weglot-language flag-0 zh" data-code-language="zh"><a data-wg-notranslate href="https://www.bluetooth.com/zh-cn/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Characteristics/org.bluetooth.characteristic.object_last"></a></li><li class="wg-li weglot-lang weglot-language flag-0 ja" data-code-language="ja"><a data-wg-notranslate href="https://www.bluetooth.com/ja-jp/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Characteristics/org.bluetooth.characteristic.object_last"></a></li><li class="wg-li weglot-lang weglot-language flag-0 ko" data-code-language="ko"><a data-wg-notranslate href="https://www.bluetooth.com/ko-kr/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Characteristics/org.bluetooth.characteristic.object_last"></a></li><li class="wg-li weglot-lang weglot-language flag-0 de" data-code-language="de"><a data-wg-notranslate href="https://www.bluetooth.com/de/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Characteristics/org.bluetooth.characteristic.object_last"></a></li></ul></aside> </body>
+<!--Weglot 3.1.7--><aside data-wg-notranslate class='country-selector weglot-inline weglot-default'><input id="wg15927900345ef00c122fb92474" class="weglot_choice" type="checkbox" name="menu"/><label for="wg15927900345ef00c122fb92474" class="wgcurrent wg-li weglot-lang weglot-language flag-0 en" data-code-language="en"><span></span></label><ul><li class="wg-li weglot-lang weglot-language flag-0 zh" data-code-language="zh"><a data-wg-notranslate href="https://www.bluetooth.com/zh-cn/404"></a></li><li class="wg-li weglot-lang weglot-language flag-0 ja" data-code-language="ja"><a data-wg-notranslate href="https://www.bluetooth.com/ja-jp/404"></a></li><li class="wg-li weglot-lang weglot-language flag-0 ko" data-code-language="ko"><a data-wg-notranslate href="https://www.bluetooth.com/ko-kr/404"></a></li><li class="wg-li weglot-lang weglot-language flag-0 de" data-code-language="de"><a data-wg-notranslate href="https://www.bluetooth.com/de/404"></a></li></ul></aside> </body>
 
 </html>

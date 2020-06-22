@@ -393,16 +393,26 @@ class CHAR_XML:
 
 
 def get_XML_CHAR(char):
-    char_string = "_".join([ch.lower().replace('-', ' ')
-                            for ch in char.split()])
+    if "Magnetic Flux" in char:
+        char_string = "_".join([ch.lower().replace('magnetic', 'Magnetic')
+                                for ch in char.replace('-', ' ', 10).replace('–', ' ').split()])
+        char_string = char_string.replace('3d', '3D').replace('2d', '2D')
+    else:
+        char_string = "_".join([ch.lower()
+                                for ch in char.replace('-', ' ', 10).replace('–', ' ').split()])
     char_string += '.xml'
+    char_string = char_string.replace('_characteristic', '')
     return CHAR_XML(char_string)
 
 
 def get_raw_XML_CHAR(char):
-    char_string = "_".join([ch.lower().replace('-', ' ')
-                            for ch in char.split()])
-    char_string += '.xml'
-
-    with open("{}/{}".format(CHARS_XML_DIR, char_string), 'rb') as xmlfileraw:
+    if "Magnetic Flux" in char:
+        char_string = "_".join([ch.lower().replace('magnetic', 'Magnetic')
+                                for ch in char.replace('-', ' ', 10).replace('–', ' ').split()])
+        char_string = char_string.replace('3d', '3D').replace('2d', '2D')
+    else:
+        char_string = "_".join([ch.lower()
+                                for ch in char.replace('-', ' ', 10).replace('–', ' ').split()])
+    char_string = char_string.replace('_characteristic', '')
+    with open("{}/{}.xml".format(CHARS_XML_DIR, char_string), 'rb') as xmlfileraw:
         return xmlfileraw.read().decode()

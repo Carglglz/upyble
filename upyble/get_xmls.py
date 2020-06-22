@@ -8,8 +8,12 @@ XML_CHAR_DIR = "chars_xml/{}"
 
 
 def get_link_from_char(char):
-    fmt_string = "_".join([ch.lower().replace('-', ' ') for ch in char.split()])
-    return fmt_string
+    if "Magnetic Flux" in char:
+        fmt_string = "_".join([ch.lower().replace('magnetic', 'Magnetic') for ch in char.replace('-', ' ', 10).replace('–', ' ').split()])
+        fmt_string = fmt_string.replace('3d', '3D').replace('2d', '2D')
+    else:
+        fmt_string = "_".join([ch.lower() for ch in char.replace('-', ' ', 10).replace('–', ' ').split()])
+    return fmt_string.replace('_characteristic', '')
 
 
 XML_CHAR_LINKS = [BLUETOOTH_LINK_TEMPLATE.format(get_link_from_char(char)) for char in TK]
@@ -33,5 +37,6 @@ def get_xml_file(xml_link):
         print('Operation cancelled')
 
 
-for link in XML_CHAR_LINKS:
-    get_xml_file(link)
+def get_all_xml():
+    for link in XML_CHAR_LINKS:
+        get_xml_file(link)
