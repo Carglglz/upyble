@@ -1,6 +1,7 @@
 import upyble
 import xml.etree.ElementTree as ET
 from upyble.SI_units import ble_SI_units_dict, DATA_FMT
+import traceback
 
 CHARS_XML_DIR = "{}/chars_xml".format(upyble.__path__[0])
 
@@ -292,13 +293,13 @@ class CHAR_XML:
         with open("{}/{}".format(CHARS_XML_DIR, xml_file), 'rb') as xmlfileraw:
             self._raw = xmlfileraw.read().decode()
         self._root = self._tree.getroot()
-        self.char_metada = None
+        self.char_metadata = None
         self.name = None
         self.char_type = None
         self.uuid = None
         self.field_name = None
         self.info_text = None
-        self.note = None
+        self.note = ''
         self.requirment = None
         self.data_format = None
         self.fmt = None
@@ -314,82 +315,164 @@ class CHAR_XML:
         self.maximum = None
         self.dec_exp = None
         self.xml_tags = {}
+        self.fields = {}
+        self.actual_field = None
+        self.bitfields = {}
+        self.actual_bitfield = None
+        self.actual_bit = None
         self.get_data()
+        self.get_fields()
 
     def get_data(self):
         for val in self._root.iter():
-            if hasattr(val.text, 'strip'):
-                self.xml_tags[val.tag] = [val.text.strip(), val.attrib]
-            else:
-                self.xml_tags[val.tag] = [val.text, val.attrib]
-            if val.tag == 'Characteristic':
-                self.char_metada = val.attrib
-                self.name = self.char_metada['name']
-                self.char_type = self.char_metada['type']
-                self.uuid = self.char_metada['uuid']
-            if val.tag == 'Field':
-                self.field_name = val.attrib['name']
-            if val.tag == 'Abstract':
+            try:
                 if hasattr(val.text, 'strip'):
-                    self.abstract = val.text.strip()
+                    self.xml_tags[val.tag] = [val.text.strip(), val.attrib]
                 else:
-                    self.abstract = val.text
-            if val.tag == 'Summary':
-                if hasattr(val.text, 'strip'):
-                    self.summary = val.text.strip()
-                else:
-                    self.summary = val.text
-            if val.tag == 'Description':
-                if hasattr(val.text, 'strip'):
-                    self.description = val.text.strip()
-                else:
-                    self.description = val.text
-            if val.tag == 'Maximum':
-                if hasattr(val.text, 'strip'):
-                    self.maximum = val.text.strip()
-                else:
-                    self.maximum = val.text
-            if val.tag == 'Minimum':
-                if hasattr(val.text, 'strip'):
-                    self.minimum = val.text.strip()
-                else:
-                    self.minimum = val.text
-            if val.tag == 'InformativeText':
-                if hasattr(val.text, 'strip'):
-                    self.info_text = val.text.strip()
-                else:
-                    self.info_text = val.text
-            if val.tag == 'Note':
-                if hasattr(val.text, 'strip'):
-                    self.note = val.text.strip()
-                else:
-                    self.note = val.text
-            if val.tag == 'Requirement':
-                self.requirment = val.text
-            if val.tag == 'Format':
-                self.data_format = val.text
-                self.fmt = DATA_FMT[self.data_format]
-            if val.tag == 'Unit':
-                self.unit_stringcode = val.text
-                # get unit from unit stringcode
-                unit_stringcode_filt = self.unit_stringcode.replace(
-                    "org.bluetooth.unit.", '')
-                self.quantity = ' '.join(
-                    unit_stringcode_filt.split('.')[0].split('_'))
-                try:
-                    self.unit = ' '.join(
-                        unit_stringcode_filt.split('.')[1].split('_'))
-                    self.unit_symbol = ble_SI_units_dict[self.unit]
-                except Exception as e:
+                    self.xml_tags[val.tag] = [val.text, val.attrib]
+                if val.tag == 'Characteristic':
+                    self.char_metadata = val.attrib
+                    self.name = self.char_metadata['name']
+                    self.char_type = self.char_metadata['type']
+                    self.uuid = self.char_metadata['uuid']
+                if val.tag == 'Field':
+                    self.field_name = val.attrib['name']
+                if val.tag == 'BitField':
+                    self.bitfields[val.tag] = {}
+                    self.actual_bitfield = val.tag
+                if val.tag == 'Bit':
+                    if self.bitfields.keys():
+                        if 'name' in val.attrib.keys():
+                            bitname = val.attrib['name']
+                        else:
+                            bitname = "Bit {}".format(val.attrib['index'])
+                        self.bitfields[self.actual_bitfield][bitname] = {}
+                        self.bitfields[self.actual_bitfield][bitname]['index'] = val.attrib['index']
+                        self.bitfields[self.actual_bitfield][bitname]['size'] = val.attrib['size']
+                        self.actual_bit = bitname
+                if val.tag == 'Enumeration':
+                    if self.actual_bitfield is not None:
+                        if self.bitfields[self.actual_bitfield].keys():
+                            self.bitfields[self.actual_bitfield][self.actual_bit]['Enumerations'][val.attrib['key']] = val.attrib['value']
+                if val.tag == 'Enumerations':
+                    if self.actual_bitfield is not None:
+                        if self.bitfields[self.actual_bitfield].keys():
+                            self.bitfields[self.actual_bitfield][self.actual_bit][val.tag] = {}
+                if val.tag == 'Abstract':
+                    if hasattr(val.text, 'strip'):
+                        self.abstract = val.text.strip()
+                    else:
+                        self.abstract = val.text
+                if val.tag == 'Summary':
+                    if hasattr(val.text, 'strip'):
+                        self.summary = val.text.strip()
+                    else:
+                        self.summary = val.text
+                if val.tag == 'Description':
+                    if hasattr(val.text, 'strip'):
+                        self.description = val.text.strip()
+                    else:
+                        self.description = val.text
+                if val.tag == 'Maximum':
+                    if hasattr(val.text, 'strip'):
+                        self.maximum = val.text.strip()
+                    else:
+                        self.maximum = val.text
+                if val.tag == 'Minimum':
+                    if hasattr(val.text, 'strip'):
+                        self.minimum = val.text.strip()
+                    else:
+                        self.minimum = val.text
+                if val.tag == 'InformativeText':
+                    if hasattr(val.text, 'strip'):
+                        self.info_text = val.text.strip()
+                    else:
+                        self.info_text = val.text
+                if val.tag == 'Note':
+                    if hasattr(val.text, 'strip'):
+                        self.note = val.text.strip()
+                    else:
+                        self.note = val.text
+                if val.tag == 'p':
+                    if hasattr(val.text, 'strip'):
+                        if self.note is None:
+                            self.note = ''
+                        self.note += val.text.strip() + '\n'
+                if val.tag == 'Requirement':
+                    self.requirment = val.text
+                if val.tag == 'Format':
+                    self.data_format = val.text
+                    self.fmt = DATA_FMT[self.data_format]
+                if val.tag == 'Unit':
+                    self.unit_stringcode = val.text
+                    # get unit from unit stringcode
+                    unit_stringcode_filt = self.unit_stringcode.replace(
+                        "org.bluetooth.unit.", '')
+                    self.quantity = ' '.join(
+                        unit_stringcode_filt.split('.')[0].split('_'))
                     try:
-                        self.unit = self.quantity
+                        self.unit = ' '.join(
+                            unit_stringcode_filt.split('.')[1].split('_'))
                         self.unit_symbol = ble_SI_units_dict[self.unit]
                     except Exception as e:
-                        self.unit = ''
-                        self.unit_symbol = ''
-                # get unit_symbol
-            if val.tag == 'DecimalExponent':
-                self.dec_exp = int(val.text)
+                        try:
+                            self.unit = self.quantity
+                            self.unit_symbol = ble_SI_units_dict[self.unit]
+                        except Exception as e:
+                            self.unit = ''
+                            self.unit_symbol = ''
+                    # get unit_symbol
+                if val.tag == 'DecimalExponent':
+                    self.dec_exp = int(val.text)
+            except Exception as e:
+                print(traceback.format_exc())
+
+    def get_fields(self):
+        for val in self._root.iter():
+            try:
+                if val.tag == 'Field':
+                    self.fields[val.attrib['name']] = {}
+                    self.actual_field = val.attrib['name']
+
+                if val.tag == 'Maximum':
+                    if hasattr(val.text, 'strip'):
+                        if self.fields.keys():
+                            self.fields[self.actual_field][val.tag] = val.text.strip()
+                    else:
+                        if self.fields.keys():
+                            self.fields[self.actual_field][val.tag] =  val.text
+                if val.tag == 'Minimum':
+                    if hasattr(val.text, 'strip'):
+                        if self.fields.keys():
+                            self.fields[self.actual_field][val.tag] = val.text.strip()
+                    else:
+                        if self.fields.keys():
+                            self.fields[self.actual_field][val.tag] = val.text
+                if val.tag == 'Requirement':
+                    try:
+                        if self.fields.keys():
+                            self.fields[self.actual_field][val.tag] = val.text
+                    except Exception as e:
+                        print(e)
+                if val.tag == 'Format':
+                    # self.data_format = val.text
+                    # self.fmt = DATA_FMT[self.data_format]
+                    if self.fields.keys():
+                        self.fields[self.actual_field][val.tag] = val.text
+                        self.fields[self.actual_field]['Ctype'] = DATA_FMT[val.text]
+                if val.tag == 'Enumeration':
+                    if self.fields.keys():
+                        if 'Enumerations' in self.fields[self.actual_field].keys():
+                            self.fields[self.actual_field]['Enumerations'][val.attrib['key']] = val.attrib['value']
+                        else:
+                            self.fields[self.actual_field]['Enumerations'] = {}
+                            self.fields[self.actual_field]['Enumerations'][val.attrib['key']] = val.attrib['value']
+
+                if val.tag == 'Enumerations':
+                    if self.fields.keys():
+                        self.fields[self.actual_field][val.tag] = {}
+            except Exception as e:
+                print(traceback.format_exc())
 
 
 def get_XML_CHAR(char):

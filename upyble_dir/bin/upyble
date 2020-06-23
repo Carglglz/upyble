@@ -14,6 +14,7 @@ import traceback
 # from binascii import hexlify
 import subprocess
 import argcomplete
+import textwrap
 from argcomplete.completers import ChoicesCompleter
 from upyble.upybledevice import ble_scan, BASE_BLE_DEVICE, BLE_DEVICE
 from upyble.chars import ble_char_dict, ble_char_dict_rev
@@ -21,6 +22,7 @@ from upyble.servs import ble_services_dict, ble_services_dict_rev
 from upyble.appearances import ble_appearances_dict, ble_appearances_dict_rev
 from upyble.manufacturer import ble_manufacturer_dict, ble_manufacturer_dict_rev
 from upyble.chars import get_XML_CHAR, get_raw_XML_CHAR
+from upyble.descriptors import get_XML_DESC, ble_descriptors_dict, ble_descriptors_dict_rev
 
 
 def see_global_devs():
@@ -91,7 +93,7 @@ keywords_mode = ['config', 'scan', 'tscan', 'sconf', 'get_services',
                  'brepl', 'ble', 'make_group', 'mg_group', 'see', 'check',
                  'follow', 'get_stag', 'get_scode', 'get_ctag',
                  'get_ccode', 'get_aptag', 'get_apcode', 'rfollow',
-                 'get_mcode', 'get_mtag', 'cmdata']
+                 'get_mcode', 'get_mtag', 'cmdata', 'dmdata']
 
 parser = argparse.ArgumentParser(prog='upyble',
                                  description='Command line tool for Bluetooth Low Energy MicroPython devices',
@@ -106,6 +108,7 @@ parser.add_argument("-f", help='script or file name', required=False)
 parser.add_argument("-@", help=help_dv, required=False).completer = ChoicesCompleter(see_global_devs())
 parser.add_argument('-n', type=int, default=3, help='number of max scans to try')
 parser.add_argument('-d', default='auto', help='device to config if available')
+parser.add_argument('-desc', nargs='+', help='descriptor from which to get medata').completer = ChoicesCompleter(ble_descriptors_dict_rev.keys())
 parser.add_argument('-s', help='service to write, read or receive notifications from').completer = ChoicesCompleter(ble_services_dict_rev.keys())
 parser.add_argument('-c', nargs='+', help='characteristic to write, read or receive notifications from').completer = ChoicesCompleter(ble_char_dict_rev.keys())
 parser.add_argument('-tm', type=int, default=5, help='read every "tm" seconds')
@@ -180,6 +183,16 @@ def see():
             dev_uuid = group_devs[key]
             print('DEVICE NAME: {}, UUID: {}'.format(key, dev_uuid))
 
+
+wrapper = textwrap.TextWrapper(initial_indent=" "*4,)
+
+
+def print_wrp(text, mg=3, f_indent=4, indent=0, wrapper=wrapper):
+    columns, rows = os.get_terminal_size(0)
+    wrapper.initial_indent = ' '*f_indent
+    wrapper.subsequent_indent = ' '*indent
+    wrapper.width = columns-mg
+    print('\n'.join(wrapper.wrap(text)))
 #############################################
 
 
@@ -514,25 +527,54 @@ if args.m == 'cmdata':
             if 'all' in args.c:
                 for char in ble_char_dict_rev.keys():
                     try:
-                        print('Characteristic: {}'.format(char))
+                        print('\u001b[44;1mCharacteristic:\u001b[0m {}'.format(char))
                         char_xml = get_XML_CHAR(char)
-                        print('    - NAME: {}'.format(char_xml.name))
-                        print('    - ABSTRACT: {}'.format(char_xml.abstract))
-                        print('    - SUMMARY: {}'.format(char_xml.summary))
-                        print('    - UUID: {}'.format(char_xml.uuid))
-                        print('    - QUANTITY: {}'.format(char_xml.quantity))
-                        print('    - UNIT_ID: {}'.format(char_xml.unit_stringcode))
-                        print('    - UNIT: {}'.format(char_xml.unit))
-                        print('    - SYMBOL: {}'.format(char_xml.unit_symbol))
-                        print('    - FORMAT: {}'.format(char_xml.data_format))
-                        print('    - CTYPE: {}'.format(char_xml.fmt))
-                        print('    - TYPE: {}'.format(char_xml.char_type))
-                        print('    - INFO TEXT: {}'.format(char_xml.info_text))
-                        print('    - DESCRIPTION: {}'.format(char_xml.description))
-                        print('    - MAXIMUM: {}'.format(char_xml.maximum))
-                        print('    - MINIMUM: {}'.format(char_xml.minimum))
-                        print('    - DECIMAL EXPONENT: {}'.format(char_xml.dec_exp))
-                        print('    - NOTE: {}'.format(char_xml.note))
+                        print_wrp('- NAME: {}'.format(char_xml.name))
+                        print_wrp('- ABSTRACT: {}'.format(char_xml.abstract),
+                                  indent=4 + len('- ABSTRACT: '))
+                        print_wrp('- SUMMARY: {}'.format(char_xml.summary),
+                                  indent=4 + len('- SUMMARY: '))
+                        print_wrp('- UUID: {}'.format(char_xml.uuid))
+                        print_wrp('- QUANTITY: {}'.format(char_xml.quantity))
+                        print_wrp('- UNIT_ID: {}'.format(char_xml.unit_stringcode))
+                        print_wrp('- UNIT: {}'.format(char_xml.unit))
+                        print_wrp('- SYMBOL: {}'.format(char_xml.unit_symbol))
+                        print_wrp('- FORMAT: {}'.format(char_xml.data_format))
+                        print_wrp('- CTYPE: {}'.format(char_xml.fmt))
+                        if char_xml.bitfields.keys():
+                            for field in char_xml.bitfields:
+                                print_wrp('- {}: '.format(field))
+                                for bit in char_xml.bitfields[field]:
+                                    print_wrp('- {}: '.format(bit), f_indent=8)
+                                    for key in char_xml.bitfields[field][bit].keys():
+                                        if key == 'Enumerations':
+                                            print_wrp('- {}:'.format(key), f_indent=12)
+                                            for k, v in char_xml.bitfields[field][bit][key].items():
+
+                                                print_wrp('- {}: {}'.format(k, v), f_indent=16)
+                                        else:
+                                            print_wrp('- {}: {}'.format(key, char_xml.bitfields[field][bit][key]), f_indent=12)
+                        print_wrp('- FIELDS:')
+                        for field in char_xml.fields:
+                            print_wrp('- {}: '.format(field), f_indent=8)
+                            for key in char_xml.fields[field]:
+                                if key == 'Enumerations':
+                                    print_wrp('- {}:'.format(key), f_indent=12)
+                                    for k, v in char_xml.fields[field][key].items():
+
+                                        print_wrp('- {}: {}'.format(k, v), f_indent=16)
+                                else:
+                                    print_wrp('- {}: {}'.format(key, char_xml.fields[field][key]), f_indent=12, indent=12)
+                        print_wrp('- TYPE: {}'.format(char_xml.char_type))
+                        print_wrp('- INFO TEXT: {}'.format(char_xml.info_text),
+                                  indent=4 + len('- INFO TEXT: '))
+                        print_wrp('- DESCRIPTION: {}'.format(char_xml.description),
+                                  indent=4 + len('- DESCRIPTION: '))
+                        print_wrp('- MAXIMUM: {}'.format(char_xml.maximum))
+                        print_wrp('- MINIMUM: {}'.format(char_xml.minimum))
+                        print_wrp('- DECIMAL EXPONENT: {}'.format(char_xml.dec_exp))
+                        print_wrp('- NOTE: {}'.format(char_xml.note),
+                                  indent=4 + len('- NOTE: '))
                         print('')
                         print('━'*50)
                         print('')
@@ -546,25 +588,54 @@ if args.m == 'cmdata':
             else:
 
                 for char in args.c:
-                    print('Characteristic: {}'.format(char))
+                    print('\u001b[44;1mCharacteristic:\u001b[0m {}'.format(char))
                     char_xml = get_XML_CHAR(char)
-                    print('    - NAME: {}'.format(char_xml.name))
-                    print('    - ABSTRACT: {}'.format(char_xml.abstract))
-                    print('    - SUMMARY: {}'.format(char_xml.summary))
-                    print('    - UUID: {}'.format(char_xml.uuid))
-                    print('    - QUANTITY: {}'.format(char_xml.quantity))
-                    print('    - UNIT_ID: {}'.format(char_xml.unit_stringcode))
-                    print('    - UNIT: {}'.format(char_xml.unit))
-                    print('    - SYMBOL: {}'.format(char_xml.unit_symbol))
-                    print('    - FORMAT: {}'.format(char_xml.data_format))
-                    print('    - CTYPE: {}'.format(char_xml.fmt))
-                    print('    - TYPE: {}'.format(char_xml.char_type))
-                    print('    - INFO TEXT: {}'.format(char_xml.info_text))
-                    print('    - DESCRIPTION: {}'.format(char_xml.description))
-                    print('    - MAXIMUM: {}'.format(char_xml.maximum))
-                    print('    - MINIMUM: {}'.format(char_xml.minimum))
-                    print('    - DECIMAL EXPONENT: {}'.format(char_xml.dec_exp))
-                    print('    - NOTE: {}'.format(char_xml.note))
+                    print_wrp('- NAME: {}'.format(char_xml.name))
+                    print_wrp('- ABSTRACT: {}'.format(char_xml.abstract),
+                              indent=4 + len('- ABSTRACT: '))
+                    print_wrp('- SUMMARY: {}'.format(char_xml.summary),
+                              indent=4 + len('- SUMMARY: '))
+                    print_wrp('- UUID: {}'.format(char_xml.uuid))
+                    print_wrp('- QUANTITY: {}'.format(char_xml.quantity))
+                    print_wrp('- UNIT_ID: {}'.format(char_xml.unit_stringcode))
+                    print_wrp('- UNIT: {}'.format(char_xml.unit))
+                    print_wrp('- SYMBOL: {}'.format(char_xml.unit_symbol))
+                    print_wrp('- FORMAT: {}'.format(char_xml.data_format))
+                    print_wrp('- CTYPE: {}'.format(char_xml.fmt))
+                    if char_xml.bitfields.keys():
+                        for field in char_xml.bitfields:
+                            print_wrp('- {}: '.format(field))
+                            for bit in char_xml.bitfields[field]:
+                                print_wrp('- {}: '.format(bit), f_indent=8)
+                                for key in char_xml.bitfields[field][bit].keys():
+                                    if key == 'Enumerations':
+                                        print_wrp('- {}:'.format(key), f_indent=12)
+                                        for k, v in char_xml.bitfields[field][bit][key].items():
+
+                                            print_wrp('- {}: {}'.format(k, v), f_indent=16)
+                                    else:
+                                        print_wrp('- {}: {}'.format(key, char_xml.bitfields[field][bit][key]), f_indent=12)
+                    print_wrp('- FIELDS:')
+                    for field in char_xml.fields:
+                        print_wrp('- {}: '.format(field), f_indent=8)
+                        for key in char_xml.fields[field]:
+                            if key == 'Enumerations':
+                                print_wrp('- {}:'.format(key), f_indent=12)
+                                for k, v in char_xml.fields[field][key].items():
+
+                                    print_wrp('- {}: {}'.format(k, v), f_indent=16)
+                            else:
+                                print_wrp('- {}: {}'.format(key, char_xml.fields[field][key]), f_indent=12, indent=12)
+                    print_wrp('- TYPE: {}'.format(char_xml.char_type))
+                    print_wrp('- INFO TEXT: {}'.format(char_xml.info_text),
+                              indent=4 + len('- INFO TEXT: '))
+                    print_wrp('- DESCRIPTION: {}'.format(char_xml.description),
+                              indent=4 + len('- DESCRIPTION: '))
+                    print_wrp('- MAXIMUM: {}'.format(char_xml.maximum))
+                    print_wrp('- MINIMUM: {}'.format(char_xml.minimum))
+                    print_wrp('- DECIMAL EXPONENT: {}'.format(char_xml.dec_exp))
+                    print_wrp('- NOTE: {}'.format(char_xml.note),
+                              indent=4 + len('- NOTE: '))
 
         else:
             for char in args.c:
@@ -612,6 +683,81 @@ if args.m == 'cmdata_t':
         print('XML not available or malformed')
         sys.exit()
 
+
+# GET DESC METADATA
+if args.m == 'dmdata':
+    try:
+        if not args.xml:
+            print('Descriptor Metadata:')
+            if 'all' in args.desc:
+                for desc in ble_descriptors_dict_rev.keys():
+                    try:
+                        print('\u001b[42;1mDescriptor:\u001b[0m {}'.format(desc))
+                        print('')
+                        desc_xml = get_XML_DESC(desc)
+                        print_wrp('- NAME: {}'.format(desc_xml.name))
+                        print_wrp('- ABSTRACT: {}'.format(desc_xml.abstract), indent=4+len('- ABSTRACT:'))
+                        if desc_xml.summary is not None:
+                            print_wrp('- SUMMARY: {}'.format('.\n'.join([line.strip() for line in desc_xml.summary.split('.')])), indent=4+len('- SUMMARY:'))
+                        print_wrp('- UUID: {}'.format(desc_xml.uuid))
+                        print_wrp('- INFO TEXT: {}'.format(desc_xml.info_text))
+                        for field in desc_xml.fields:
+                            print_wrp('- {}: '.format(field))
+                            for key in desc_xml.fields[field]:
+                                if key == 'Enumerations':
+                                    print_wrp('- {}:'.format(key), f_indent=8)
+                                    for k, v in desc_xml.fields[field][key].items():
+
+                                        print_wrp('- {}: {}'.format(k, v), f_indent=12)
+                                else:
+                                    print_wrp('- {}: {}'.format(key, desc_xml.fields[field][key]), f_indent=8, indent=8)
+
+                        print('')
+                        print('━'*50)
+                        print('')
+                    except Exception as e:
+                        print(traceback.format_exc())
+                        print('Descriptor: {} XML not available or malformed'.format(desc))
+                        print('')
+                        print('━'*50)
+                        print('')
+
+            else:
+
+                for desc in args.desc:
+                    print('\u001b[42;1mDescriptor:\u001b[0m {}'.format(desc))
+                    print('')
+                    desc_xml = get_XML_DESC(desc)
+                    print_wrp('- NAME: {}'.format(desc_xml.name))
+                    print_wrp('- ABSTRACT: {}'.format(desc_xml.abstract),
+                              indent=4+len('- ABSTRACT:'))
+                    if desc_xml.summary is not None:
+                        print_wrp('- SUMMARY: {}'.format('.\n'.join([line.strip() for line in desc_xml.summary.split('.')])),
+                                  indent=4+len('    - SUMMARY:'))
+                    print_wrp('- UUID: {}'.format(desc_xml.uuid))
+                    print_wrp('- INFO TEXT: {}'.format(desc_xml.info_text))
+                    for field in desc_xml.fields:
+                        print_wrp('- {}: '.format(field))
+                        for key in desc_xml.fields[field]:
+                            if key == 'Enumerations':
+                                print_wrp('- {}:'.format(key), f_indent=8)
+                                for k, v in desc_xml.fields[field][key].items():
+
+                                    print_wrp('- {}: {}'.format(k, v), f_indent=12)
+                            else:
+                                print_wrp('- {}: {}'.format(key, desc_xml.fields[field][key]), f_indent=8, indent=8)
+
+
+        else:
+            for desc in args.desc:
+                print('Descriptor: {}'.format(desc))
+                print('<-----Descriptor Metadata XML---->')
+                desc_xml = get_XML_DESC(desc)
+                print(desc_xml._raw)
+        sys.exit()
+    except Exception as e:
+        print(e)
+        sys.exit()
 
 # upyble LOOKS FOR upyble_.CONFIG FILE
 if args.t is None:

@@ -1,3 +1,4 @@
 include upyble/manufacturer.csv
 include upyble/chars_xml/*
+include upyble/descriptors_xml/*
 include upyble/SI_units.csv
