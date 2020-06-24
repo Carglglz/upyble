@@ -1,5 +1,6 @@
 
 import upyble
+import traceback
 import xml.etree.ElementTree as ET
 from upyble.SI_units import ble_SI_units_dict, DATA_FMT
 
@@ -161,7 +162,7 @@ class DESCRIPTOR_XML:
                     if self.fields.keys():
                         self.fields[self.actual_field][val.tag] = {}
             except Exception as e:
-                print(e)
+                print(traceback.format_exc())
                 print(val.tag, val.text, val.attrib)
 
 
