@@ -105,8 +105,9 @@ This means that if the first argument is not a Mode keyword it assumes it is a '
 - **`upyble get_apcode`**: to get appearance code from an appearance tag, use *`-aptag`* to indicate the tag
 - **`upyble get_mtag`:** to get manufacturer tag from manufacturer code, use *`-mcode`* to indicate the code
 - **`upyble get_mcode`**: to get manufacturer code from a manufacturer tag, use *`-mtag`* to indicate the tag
-- **`upyble cmdata`**: to get characteristic metadata (name, type, uuid, unit, format, notes...). (Not all characteristics are available yet), Use -c option to indicate characteristic.
+- **`upyble cmdata`**: to get characteristic metadata (name, type, uuid, unit, format, notes...). (Not all characteristics are available yet), Use *`-c`* option to indicate characteristic or *`-c all`* to see all that are available.
 - **`upyble cmdata_t`**: get_cmdata in table format.
+- **`upyble dmdata `**:  to get descriptor metadata (Name, uuid, format...). Use *`-desc`* option to indicate a descriptor or  *`-desc all`* to see all that are available.
 - **`upyble follow`**:   to read from a service (see *`-s`,* *` -c`* , *` -tm`*) , e.g : `upyble follow -s "Battery Service" `, will read all readable characteristics, or use  *` -c`*  to indicate a specific one/group. e.g:  `upyble follow -s "Battery Service" -c "Battery Level"`. This mode autodetects format and unit from characteristic metadata
 - **`upyble rfollow`**:   to read from a service (see *`-s`,* *` -c`* , *` -tm`*, *`-u`* , *`fmt`* and  *`-x`*) , e.g : `upyble follow -s "Battery Service" `, will read all readable characteristics, or use  *` -c`*  to indicate a specific one/group. e.g:  `upyble follow -s "Battery Service" -c "Battery Level"`
 - **`upyble see`**: to get specific info about a devices group use `-G` option as `see -G [GROUP NAME]`
@@ -119,9 +120,9 @@ ____
 
 ##### 	Follow the Battery Level and Temperature (cpu) of an Esp32.
 
-​	This needs `ble_batt_temp.py` in the device. (See upybleutils)
+​	This needs `ble_batt_temp.py` in the device. (See [upybleutils](https://github.com/Carglglz/upyble/tree/master/upybleutils))
 
-​	In the REPL do:
+​	In the device REPL do:
 
 ```python
 >>> import ble_batt_temp
@@ -169,18 +170,6 @@ Following service: all
 15:35:44,053 [upyble@esp32-batt-temp] Environmental Sensing [Temperature] : 56.67 °C
 ^CDisconnected successfully
 ```
-
-
-
-___
-
-#### SEE WHAT'S GOING ON UNDER THE HOOD:
-
-_ℹ️ Host and the device must be connected._
-
-  In a terminal window open a 'serial repl' with `upydev srepl --port [USBPORT]` command
-
-  In another window use upyble BLE SHELL-REPL normally. Now in the terminal window with the serial repl you can see which commands are sent.
 
 ____
 

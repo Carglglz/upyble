@@ -124,6 +124,8 @@ parser.add_argument('-apcode',  help='Appearance code; e.g "768"').completer = C
 parser.add_argument('-mtag',  help='Manufacturer tag; e.g "Espressif"').completer = ChoicesCompleter(ble_manufacturer_dict_rev.keys())
 parser.add_argument('-mcode',  help='Manufacturer code; e.g "741"').completer = ChoicesCompleter(ble_manufacturer_dict.keys())
 parser.add_argument('-xml', help='To see metadata in original xml format', action='store_true')
+parser.add_argument('-r', help='To read characteristics with get_service mode', action='store_true')
+parser.add_argument('-mdata', help='To see characteristics metadata with get_service mode', action='store_true')
 parser.add_argument(
     "-st", help='shows target uuid if using config file', required=False, default=False, action='store_true')
 parser.add_argument(
@@ -187,9 +189,12 @@ def see():
 wrapper = textwrap.TextWrapper(initial_indent=" "*4,)
 
 
-def print_wrp(text, mg=3, f_indent=4, indent=0, wrapper=wrapper):
+def print_wrp(text, mg=3, f_indent=4, indent=0,
+              wrapper=wrapper, f_indent_char='', r_indent_char=' '):
     columns, rows = os.get_terminal_size(0)
-    wrapper.initial_indent = ' '*f_indent
+    if f_indent_char != '':
+        f_indent += -1
+    wrapper.initial_indent = f_indent_char + r_indent_char * f_indent
     wrapper.subsequent_indent = ' '*indent
     wrapper.width = columns-mg
     print('\n'.join(wrapper.wrap(text)))
@@ -535,50 +540,120 @@ if args.m == 'cmdata':
                                   indent=4 + len('- ABSTRACT: '))
                         print_wrp('- SUMMARY: {}'.format(char_xml.summary),
                                   indent=4 + len('- SUMMARY: '))
-                        print_wrp('- UUID: {}'.format(char_xml.uuid))
-                        print_wrp('- QUANTITY: {}'.format(char_xml.quantity))
-                        print_wrp('- UNIT_ID: {}'.format(char_xml.unit_stringcode))
-                        print_wrp('- UNIT: {}'.format(char_xml.unit))
-                        print_wrp('- SYMBOL: {}'.format(char_xml.unit_symbol))
-                        print_wrp('- FORMAT: {}'.format(char_xml.data_format))
-                        print_wrp('- CTYPE: {}'.format(char_xml.fmt))
-                        if char_xml.bitfields.keys():
-                            for field in char_xml.bitfields:
-                                print_wrp('- {}: '.format(field))
-                                for bit in char_xml.bitfields[field]:
-                                    print_wrp('- {}: '.format(bit), f_indent=8)
-                                    for key in char_xml.bitfields[field][bit].keys():
-                                        if key == 'Enumerations':
-                                            print_wrp('- {}:'.format(key), f_indent=12)
-                                            for k, v in char_xml.bitfields[field][bit][key].items():
-
-                                                print_wrp('- {}: {}'.format(k, v), f_indent=16)
-                                        else:
-                                            print_wrp('- {}: {}'.format(key, char_xml.bitfields[field][bit][key]), f_indent=12)
+                        # print_wrp('- UUID: {}'.format(char_xml.uuid))
+                        # print_wrp('- QUANTITY: {}'.format(char_xml.quantity))
+                        # print_wrp('- UNIT_ID: {}'.format(char_xml.unit_stringcode))
+                        # print_wrp('- UNIT: {}'.format(char_xml.unit))
+                        # print_wrp('- SYMBOL: {}'.format(char_xml.unit_symbol))
+                        # print_wrp('- FORMAT: {}'.format(char_xml.data_format))
+                        # print_wrp('- CTYPE: {}'.format(char_xml.fmt))
                         print_wrp('- FIELDS:')
                         for field in char_xml.fields:
                             print_wrp('- {}: '.format(field), f_indent=8)
                             for key in char_xml.fields[field]:
-                                if key == 'Enumerations':
+                                if key == 'BitField':
                                     print_wrp('- {}:'.format(key), f_indent=12)
-                                    for k, v in char_xml.fields[field][key].items():
+                                    for bit in char_xml.fields[field][key]:
+                                        print_wrp('- {}: '.format(bit), f_indent=16)
+                                        for keybit in char_xml.fields[field][key][bit].keys():
+                                            if keybit == 'Enumerations':
+                                                print_wrp('- {}:'.format(keybit), f_indent=20)
+                                                for k, v in char_xml.fields[field][key][bit][keybit].items():
 
-                                        print_wrp('- {}: {}'.format(k, v), f_indent=16)
+                                                    print_wrp('- {}: {}'.format(k, v), f_indent=24)
+                                            else:
+                                                print_wrp('- {}: {}'.format(keybit, char_xml.fields[field][key][bit][keybit]), f_indent=20)
                                 else:
-                                    print_wrp('- {}: {}'.format(key, char_xml.fields[field][key]), f_indent=12, indent=12)
+                                    if key == 'Enumerations':
+                                        if 'BitField' not in char_xml.fields[field].keys():
+                                            print_wrp('- {}:'.format(key), f_indent=12)
+                                            for k, v in char_xml.fields[field][key].items():
+
+                                                print_wrp('- {}: {}'.format(k, v), f_indent=16)
+                                    else:
+                                        print_wrp('- {}: {}'.format(key, char_xml.fields[field][key]), f_indent=12, indent=12)
+
+
+
+
+                        # if char_xml.bitfields.keys():
+                        #     for field in char_xml.bitfields:
+                        #         print_wrp('- {}: '.format(field))
+                        #         for bit in char_xml.bitfields[field]:
+                        #             print_wrp('- {}: '.format(bit), f_indent=8)
+                        #             for key in char_xml.bitfields[field][bit].keys():
+                        #                 if key == 'Enumerations':
+                        #                     print_wrp('- {}:'.format(key), f_indent=12)
+                        #                     for k, v in char_xml.bitfields[field][bit][key].items():
+                        #
+                        #                         print_wrp('- {}: {}'.format(k, v), f_indent=16)
+                        #                 else:
+                        #                     print_wrp('- {}: {}'.format(key, char_xml.bitfields[field][bit][key]), f_indent=12)
                         print_wrp('- TYPE: {}'.format(char_xml.char_type))
                         print_wrp('- INFO TEXT: {}'.format(char_xml.info_text),
                                   indent=4 + len('- INFO TEXT: '))
                         print_wrp('- DESCRIPTION: {}'.format(char_xml.description),
                                   indent=4 + len('- DESCRIPTION: '))
-                        print_wrp('- MAXIMUM: {}'.format(char_xml.maximum))
-                        print_wrp('- MINIMUM: {}'.format(char_xml.minimum))
-                        print_wrp('- DECIMAL EXPONENT: {}'.format(char_xml.dec_exp))
+                        # print_wrp('- MAXIMUM: {}'.format(char_xml.maximum))
+                        # print_wrp('- MINIMUM: {}'.format(char_xml.minimum))
+                        # print_wrp('- DECIMAL EXPONENT: {}'.format(char_xml.dec_exp))
                         print_wrp('- NOTE: {}'.format(char_xml.note),
                                   indent=4 + len('- NOTE: '))
                         print('')
                         print('━'*50)
                         print('')
+                        # print('\u001b[44;1mCharacteristic:\u001b[0m {}'.format(char))
+                        # print('')
+                        # char_xml = get_XML_CHAR(char)
+                        # print_wrp('- NAME: {}'.format(char_xml.name))
+                        # print_wrp('- ABSTRACT: {}'.format(char_xml.abstract),
+                        #           indent=4 + len('- ABSTRACT: '))
+                        # print_wrp('- SUMMARY: {}'.format(char_xml.summary),
+                        #           indent=4 + len('- SUMMARY: '))
+                        # print_wrp('- UUID: {}'.format(char_xml.uuid))
+                        # print_wrp('- QUANTITY: {}'.format(char_xml.quantity))
+                        # print_wrp('- UNIT_ID: {}'.format(char_xml.unit_stringcode))
+                        # print_wrp('- UNIT: {}'.format(char_xml.unit))
+                        # print_wrp('- SYMBOL: {}'.format(char_xml.unit_symbol))
+                        # print_wrp('- FORMAT: {}'.format(char_xml.data_format))
+                        # print_wrp('- CTYPE: {}'.format(char_xml.fmt))
+                        # print_wrp('- FIELDS:')
+                        # for field in char_xml.fields:
+                        #     print_wrp('- {}: '.format(field), f_indent=8)
+                        #     for key in char_xml.fields[field]:
+                        #         if key == 'Enumerations':
+                        #             print_wrp('- {}:'.format(key), f_indent=12)
+                        #             for k, v in char_xml.fields[field][key].items():
+                        #
+                        #                 print_wrp('- {}: {}'.format(k, v), f_indent=16)
+                        #         else:
+                        #             print_wrp('- {}: {}'.format(key, char_xml.fields[field][key]), f_indent=12, indent=12)
+                        # if char_xml.bitfields.keys():
+                        #     for field in char_xml.bitfields:
+                        #         print_wrp('- {}: '.format(field))
+                        #         for bit in char_xml.bitfields[field]:
+                        #             print_wrp('- {}: '.format(bit), f_indent=8)
+                        #             for key in char_xml.bitfields[field][bit].keys():
+                        #                 if key == 'Enumerations':
+                        #                     print_wrp('- {}:'.format(key), f_indent=12)
+                        #                     for k, v in char_xml.bitfields[field][bit][key].items():
+                        #
+                        #                         print_wrp('- {}: {}'.format(k, v), f_indent=16)
+                        #                 else:
+                        #                     print_wrp('- {}: {}'.format(key, char_xml.bitfields[field][bit][key]), f_indent=12)
+                        # print_wrp('- TYPE: {}'.format(char_xml.char_type))
+                        # print_wrp('- INFO TEXT: {}'.format(char_xml.info_text),
+                        #           indent=4 + len('- INFO TEXT: '))
+                        # print_wrp('- DESCRIPTION: {}'.format(char_xml.description),
+                        #           indent=4 + len('- DESCRIPTION: '))
+                        # print_wrp('- MAXIMUM: {}'.format(char_xml.maximum))
+                        # print_wrp('- MINIMUM: {}'.format(char_xml.minimum))
+                        # print_wrp('- DECIMAL EXPONENT: {}'.format(char_xml.dec_exp))
+                        # print_wrp('- NOTE: {}'.format(char_xml.note),
+                        #           indent=4 + len('- NOTE: '))
+                        # print('')
+                        # print('━'*50)
+                        # print('')
                     except Exception as e:
                         print(traceback.format_exc())
                         print('Characteristic: {} XML not available or malformed'.format(char))
@@ -597,47 +672,68 @@ if args.m == 'cmdata':
                               indent=4 + len('- ABSTRACT: '))
                     print_wrp('- SUMMARY: {}'.format(char_xml.summary),
                               indent=4 + len('- SUMMARY: '))
-                    print_wrp('- UUID: {}'.format(char_xml.uuid))
-                    print_wrp('- QUANTITY: {}'.format(char_xml.quantity))
-                    print_wrp('- UNIT_ID: {}'.format(char_xml.unit_stringcode))
-                    print_wrp('- UNIT: {}'.format(char_xml.unit))
-                    print_wrp('- SYMBOL: {}'.format(char_xml.unit_symbol))
-                    print_wrp('- FORMAT: {}'.format(char_xml.data_format))
-                    print_wrp('- CTYPE: {}'.format(char_xml.fmt))
-                    if char_xml.bitfields.keys():
-                        for field in char_xml.bitfields:
-                            print_wrp('- {}: '.format(field))
-                            for bit in char_xml.bitfields[field]:
-                                print_wrp('- {}: '.format(bit), f_indent=8)
-                                for key in char_xml.bitfields[field][bit].keys():
-                                    if key == 'Enumerations':
-                                        print_wrp('- {}:'.format(key), f_indent=12)
-                                        for k, v in char_xml.bitfields[field][bit][key].items():
-
-                                            print_wrp('- {}: {}'.format(k, v), f_indent=16)
-                                    else:
-                                        print_wrp('- {}: {}'.format(key, char_xml.bitfields[field][bit][key]), f_indent=12)
+                    # print_wrp('- UUID: {}'.format(char_xml.uuid))
+                    # print_wrp('- QUANTITY: {}'.format(char_xml.quantity))
+                    # print_wrp('- UNIT_ID: {}'.format(char_xml.unit_stringcode))
+                    # print_wrp('- UNIT: {}'.format(char_xml.unit))
+                    # print_wrp('- SYMBOL: {}'.format(char_xml.unit_symbol))
+                    # print_wrp('- FORMAT: {}'.format(char_xml.data_format))
+                    # print_wrp('- CTYPE: {}'.format(char_xml.fmt))
                     print_wrp('- FIELDS:')
                     for field in char_xml.fields:
                         print_wrp('- {}: '.format(field), f_indent=8)
                         for key in char_xml.fields[field]:
-                            if key == 'Enumerations':
+                            if key == 'BitField':
                                 print_wrp('- {}:'.format(key), f_indent=12)
-                                for k, v in char_xml.fields[field][key].items():
+                                for bit in char_xml.fields[field][key]:
+                                    print_wrp('- {}: '.format(bit), f_indent=16)
+                                    for keybit in char_xml.fields[field][key][bit].keys():
+                                        if keybit == 'Enumerations':
+                                            print_wrp('- {}:'.format(keybit), f_indent=20)
+                                            for k, v in char_xml.fields[field][key][bit][keybit].items():
 
-                                    print_wrp('- {}: {}'.format(k, v), f_indent=16)
+                                                print_wrp('- {}: {}'.format(k, v), f_indent=24)
+                                        else:
+                                            print_wrp('- {}: {}'.format(keybit, char_xml.fields[field][key][bit][keybit]), f_indent=20)
                             else:
-                                print_wrp('- {}: {}'.format(key, char_xml.fields[field][key]), f_indent=12, indent=12)
+                                if key == 'Enumerations':
+                                    if 'BitField' not in char_xml.fields[field].keys():
+                                        print_wrp('- {}:'.format(key), f_indent=12)
+                                        for k, v in char_xml.fields[field][key].items():
+
+                                            print_wrp('- {}: {}'.format(k, v), f_indent=16)
+                                else:
+                                    print_wrp('- {}: {}'.format(key, char_xml.fields[field][key]), f_indent=12, indent=12)
+
+
+
+
+                    # if char_xml.bitfields.keys():
+                    #     for field in char_xml.bitfields:
+                    #         print_wrp('- {}: '.format(field))
+                    #         for bit in char_xml.bitfields[field]:
+                    #             print_wrp('- {}: '.format(bit), f_indent=8)
+                    #             for key in char_xml.bitfields[field][bit].keys():
+                    #                 if key == 'Enumerations':
+                    #                     print_wrp('- {}:'.format(key), f_indent=12)
+                    #                     for k, v in char_xml.bitfields[field][bit][key].items():
+                    #
+                    #                         print_wrp('- {}: {}'.format(k, v), f_indent=16)
+                    #                 else:
+                    #                     print_wrp('- {}: {}'.format(key, char_xml.bitfields[field][bit][key]), f_indent=12)
                     print_wrp('- TYPE: {}'.format(char_xml.char_type))
                     print_wrp('- INFO TEXT: {}'.format(char_xml.info_text),
                               indent=4 + len('- INFO TEXT: '))
                     print_wrp('- DESCRIPTION: {}'.format(char_xml.description),
                               indent=4 + len('- DESCRIPTION: '))
-                    print_wrp('- MAXIMUM: {}'.format(char_xml.maximum))
-                    print_wrp('- MINIMUM: {}'.format(char_xml.minimum))
-                    print_wrp('- DECIMAL EXPONENT: {}'.format(char_xml.dec_exp))
+                    # print_wrp('- MAXIMUM: {}'.format(char_xml.maximum))
+                    # print_wrp('- MINIMUM: {}'.format(char_xml.minimum))
+                    # print_wrp('- DECIMAL EXPONENT: {}'.format(char_xml.dec_exp))
                     print_wrp('- NOTE: {}'.format(char_xml.note),
                               indent=4 + len('- NOTE: '))
+                    print('')
+                    print('━'*50)
+                    print('')
 
         else:
             for char in args.c:
@@ -727,7 +823,7 @@ if args.m == 'dmdata':
             else:
 
                 for desc in args.desc:
-                    print('\u001b[42;1mDescriptor:\u001b[0m {}'.format(desc))
+                    print('\u001b[45;1mDescriptor:\u001b[0m {}'.format(desc))
                     print('')
                     desc_xml = get_XML_DESC(desc)
                     print_wrp('- NAME: {}'.format(desc_xml.name))
@@ -799,6 +895,124 @@ if args.m == 'get_services':
         print('Device not reachable try again.')
         pass
     else:
+        if args.r:
+            print('Reading services...')
+            is_last_serv = False
+            is_last_char = False
+            for service in bdev.services_rsum:
+                if service == list(bdev.services_rsum.keys())[-1]:
+                    is_last_serv = True
+                print_wrp('┃', f_indent=0)
+                if is_last_serv:
+                    print_wrp("\u001b[42;1m{}\u001b[0m".format(service),
+                              f_indent_char='┗', r_indent_char='━')
+                else:
+                    print_wrp("\u001b[42;1m{}\u001b[0m".format(service),
+                              f_indent_char='┣', r_indent_char='━')
+                for char in bdev.services_rsum[service]:
+                    if char == bdev.services_rsum[service][-1]:
+                        is_last_char = True
+                    else:
+                        is_last_char = False
+                    if not is_last_serv:
+                        print_wrp('┃', f_indent_char='┃')
+                    else:
+                        print_wrp('┃', f_indent_char='')
+                    char_xml = get_XML_CHAR(char)
+                    char_value = bdev.read_service(key=char, data_fmt=char_xml.fmt)
+                    if not is_last_serv:
+                        if is_last_char:
+                            print_wrp("┗━━━\u001b[44;1m{:^30}\u001b[0m {} {}".format(char, char_xml.fmt_val(char_value), char_xml.unit_symbol),
+                                      f_indent=4, f_indent_char='┃')
+                        else:
+                            print_wrp("┣━━━\u001b[44;1m{:^30}\u001b[0m {} {}".format(char, char_xml.fmt_val(char_value), char_xml.unit_symbol),
+                                      f_indent=4, f_indent_char='┃')
+                    else:
+                        if is_last_char:
+                            print_wrp("┗━━━\u001b[44;1m{:^30}\u001b[0m {} {}".format(char, char_xml.fmt_val(char_value), char_xml.unit_symbol),
+                                      f_indent=4, f_indent_char='')
+                        else:
+                            print_wrp("┣━━━\u001b[44;1m{:^30}\u001b[0m {} {}".format(char, char_xml.fmt_val(char_value), char_xml.unit_symbol),
+                                      f_indent=4, f_indent_char='')
+
+        if args.mdata:
+            print('')
+            print('Characteristics metadata:')
+            print('')
+            for service in bdev.services_rsum:
+                for char in bdev.services_rsum[service]:
+                    print('\u001b[44;1mCharacteristic:\u001b[0m {}'.format(char))
+                    print('')
+                    char_xml = get_XML_CHAR(char)
+                    print_wrp('- NAME: {}'.format(char_xml.name))
+                    print_wrp('- ABSTRACT: {}'.format(char_xml.abstract),
+                              indent=4 + len('- ABSTRACT: '))
+                    print_wrp('- SUMMARY: {}'.format(char_xml.summary),
+                              indent=4 + len('- SUMMARY: '))
+                    # print_wrp('- UUID: {}'.format(char_xml.uuid))
+                    # print_wrp('- QUANTITY: {}'.format(char_xml.quantity))
+                    # print_wrp('- UNIT_ID: {}'.format(char_xml.unit_stringcode))
+                    # print_wrp('- UNIT: {}'.format(char_xml.unit))
+                    # print_wrp('- SYMBOL: {}'.format(char_xml.unit_symbol))
+                    # print_wrp('- FORMAT: {}'.format(char_xml.data_format))
+                    # print_wrp('- CTYPE: {}'.format(char_xml.fmt))
+                    print_wrp('- FIELDS:')
+                    for field in char_xml.fields:
+                        print_wrp('- {}: '.format(field), f_indent=8)
+                        for key in char_xml.fields[field]:
+                            if key == 'BitField':
+                                print_wrp('- {}:'.format(key), f_indent=12)
+                                for bit in char_xml.fields[field][key]:
+                                    print_wrp('- {}: '.format(bit), f_indent=16)
+                                    for keybit in char_xml.fields[field][key][bit].keys():
+                                        if keybit == 'Enumerations':
+                                            print_wrp('- {}:'.format(keybit), f_indent=20)
+                                            for k, v in char_xml.fields[field][key][bit][keybit].items():
+
+                                                print_wrp('- {}: {}'.format(k, v), f_indent=24)
+                                        else:
+                                            print_wrp('- {}: {}'.format(keybit, char_xml.fields[field][key][bit][keybit]), f_indent=20)
+                            else:
+                                if key == 'Enumerations':
+                                    if 'BitField' not in char_xml.fields[field].keys():
+                                        print_wrp('- {}:'.format(key), f_indent=12)
+                                        for k, v in char_xml.fields[field][key].items():
+
+                                            print_wrp('- {}: {}'.format(k, v), f_indent=16)
+                                else:
+                                    print_wrp('- {}: {}'.format(key, char_xml.fields[field][key]), f_indent=12, indent=12)
+
+
+
+
+                    # if char_xml.bitfields.keys():
+                    #     for field in char_xml.bitfields:
+                    #         print_wrp('- {}: '.format(field))
+                    #         for bit in char_xml.bitfields[field]:
+                    #             print_wrp('- {}: '.format(bit), f_indent=8)
+                    #             for key in char_xml.bitfields[field][bit].keys():
+                    #                 if key == 'Enumerations':
+                    #                     print_wrp('- {}:'.format(key), f_indent=12)
+                    #                     for k, v in char_xml.bitfields[field][bit][key].items():
+                    #
+                    #                         print_wrp('- {}: {}'.format(k, v), f_indent=16)
+                    #                 else:
+                    #                     print_wrp('- {}: {}'.format(key, char_xml.bitfields[field][bit][key]), f_indent=12)
+                    print_wrp('- TYPE: {}'.format(char_xml.char_type))
+                    print_wrp('- INFO TEXT: {}'.format(char_xml.info_text),
+                              indent=4 + len('- INFO TEXT: '))
+                    print_wrp('- DESCRIPTION: {}'.format(char_xml.description),
+                              indent=4 + len('- DESCRIPTION: '))
+                    # print_wrp('- MAXIMUM: {}'.format(char_xml.maximum))
+                    # print_wrp('- MINIMUM: {}'.format(char_xml.minimum))
+                    # print_wrp('- DECIMAL EXPONENT: {}'.format(char_xml.dec_exp))
+                    print_wrp('- NOTE: {}'.format(char_xml.note),
+                              indent=4 + len('- NOTE: '))
+                    print('')
+                    print('━'*50)
+                    print('')
+
+
         bdev.disconnect(log=False)
     sys.exit()
 # RAW COMMANDS

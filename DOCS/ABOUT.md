@@ -21,3 +21,13 @@
 - #### BOARDS:
 
   - Esp32 Huzzah feather
+
+___
+
+#### SEE WHAT'S GOING ON UNDER THE HOOD:
+
+_ℹ️ Host and the device must be connected._
+
+  In a terminal window open a 'serial repl' with `upydev srepl --port [USBPORT]` command
+
+  In another window use upyble BLE SHELL-REPL normally. Now in the terminal window with the serial repl you can see which commands are sent.
