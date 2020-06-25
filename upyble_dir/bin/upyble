@@ -790,7 +790,7 @@ if args.m == 'dmdata':
             if 'all' in args.desc:
                 for desc in ble_descriptors_dict_rev.keys():
                     try:
-                        print('\u001b[42;1mDescriptor:\u001b[0m {}'.format(desc))
+                        print('\u001b[45;1mDescriptor:\u001b[0m {}'.format(desc))
                         print('')
                         desc_xml = get_XML_DESC(desc)
                         print_wrp('- NAME: {}'.format(desc_xml.name))
@@ -934,6 +934,27 @@ if args.m == 'get_services':
                         else:
                             print_wrp("┣━━━\u001b[44;1m{:^30}\u001b[0m {} {}".format(char, char_xml.fmt_val(char_value), char_xml.unit_symbol),
                                       f_indent=4, f_indent_char='')
+                    for desc in bdev.chars_desc_rsum[char]:
+                        if desc == 'Characteristic User Description':
+                            if not is_last_serv:
+                                print_wrp('┃', f_indent_char='┃', f_indent=8)
+                            else:
+                                print_wrp('┃', f_indent_char='', f_indent=8)
+                            desc_value = bdev.read_descriptor(key=desc, char=char)
+                            if not is_last_serv:
+                                # if is_last_char:
+                                print_wrp("┗━━━\u001b[45;1m{:^30}\u001b[0m {}".format(desc, desc_value),
+                                          f_indent=8, f_indent_char='┃')
+                            #     else:
+                            #         print_wrp("┣━━━\u001b[45;1m{:^30}\u001b[0m {} ".format(char, desc_value),
+                            #                   f_indent=8, f_indent_char='┃')
+                            else:
+                                # if is_last_char:
+                                print_wrp("┗━━━\u001b[45;1m{:^30}\u001b[0m {} ".format(desc, desc_value),
+                                          f_indent=8, f_indent_char='')
+                                # else:
+                                #     print_wrp("┣━━━\u001b[45;1m{:^30}\u001b[0m {} ".format(char, desc_value),
+                                #               f_indent=8, f_indent_char='')
 
         if args.mdata:
             print('')

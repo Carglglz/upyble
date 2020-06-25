@@ -571,7 +571,6 @@ class CHAR_XML:
         return value
 
 
-
 def get_XML_CHAR(char):
     if "Magnetic Flux" in char:
         char_string = "_".join([ch.lower().replace('magnetic', 'Magnetic')

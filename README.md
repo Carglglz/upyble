@@ -96,7 +96,7 @@ This means that if the first argument is not a Mode keyword it assumes it is a '
 - **`upyble scan`**: to scan for BLE devices (*see `-n` for max number of scans)*
 - **`upyble tscan`**: to scan for BLE devices, results with table format
 - **`upyble sconf`**: to scan and configure a device that matches a name *`-d [NAME]`*
-- **`upyble get_services`**: to get services of a device
+- **`upyble get_services`**: to get services of a device, use *`-r`* to read them and *`-mdata`* to see available metadata
 - **`upyble get_stag`**: to get service tag from a service code, use *`-scode`* to indicate the code
 - **`upyble get_scode`**: to get service code from a service tag, use *`-stag`* to indicate the tag
 - **`upyble get_ctag`**: to get characteristic tag from characteristic code, use *`-ccode`* to indicate the code

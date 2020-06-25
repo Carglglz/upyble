@@ -8,7 +8,7 @@ from upyble.chars import ble_char_dict, ble_char_dict_rev, get_XML_CHAR
 from upyble.servs import ble_services_dict, ble_services_dict_rev
 from upyble.appearances import ble_appearances_dict, ble_appearances_dict_rev
 from upyble.manufacturer import ble_manufacturer_dict
-from upyble.descriptors import ble_descriptors_dict
+from upyble.descriptors import ble_descriptors_dict, ble_descriptors_dict_rev
 import struct
 import uuid as U_uuid
 import time
@@ -321,6 +321,8 @@ class BASE_BLE_DEVICE:
         self.services = {}
         self.readables = {}
         self.writeables = {}
+        self.services_rsum = {}
+        self.chars_desc_rsum = {}
         self.loop = asyncio.get_event_loop()
         self.raw_buff_queue = asyncio.Queue()
         self.kb_cmd = None
@@ -432,6 +434,12 @@ class BASE_BLE_DEVICE:
                     except Exception as e:
                         self.services[service.description]['CHARS'][char.uuid] = {char.description: ",".join(
                             char.properties), 'Descriptors': {descriptor.uuid: descriptor.handle for descriptor in char.descriptors}}
+
+                    self.chars_desc_rsum[ble_char_dict[char.uuid]] = {}
+                    for descriptor in char.descriptors:
+                        self.chars_desc_rsum[ble_char_dict[char.uuid]][ble_descriptors_dict[descriptor.uuid]] = descriptor.handle
+
+
                 if log:
                     if is_NUS:
                         print("\t[Characteristic] {0}: ({1}) | Name: {2}".format(
@@ -470,6 +478,30 @@ class BASE_BLE_DEVICE:
                 return bytes(data+'\r', 'utf-8')
             else:
                 return bytes(data, 'utf-8')
+
+    async def as_read_descriptor(self, handle):
+        return bytes(await self.ble_client.read_gatt_descriptor(handle))
+
+    def read_descriptor_raw(self, key=None, char=None):
+        if key is not None:
+            # print(self.chars_desc_rsum[char])
+            if key in list(self.chars_desc_rsum[char]):
+                data = self.loop.run_until_complete(
+                    self.as_read_descriptor(self.chars_desc_rsum[char][key]))
+                return data
+            else:
+                print('Descriptor not available for this characteristic')
+
+    def read_descriptor(self, key=None, char=None, data_fmt="utf8"):
+        try:
+            if data_fmt == 'utf8':
+                data = self.read_descriptor_raw(key=key, char=char).decode('utf8')
+                return data
+            else:
+                data, = struct.unpack(data_fmt, self.read_service_raw(key=key, char=char))
+                return data
+        except Exception as e:
+            print(e)
 
     async def as_read_service(self, uuid):
         return bytes(await self.ble_client.read_gatt_char(uuid))

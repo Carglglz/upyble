@@ -19,11 +19,12 @@ _IRQ_CENTRAL_DISCONNECT = const(1 << 1)
 
 # org.bluetooth.service.battery_service
 _BATT_SERV_UUID = bluetooth.UUID(0x180F)
-# org.bluetooth.characteristic.temperature
+# org.bluetooth.characteristic.battery_level
 _BATT_CHAR = (
     bluetooth.UUID(0x2A19),
     bluetooth.FLAG_READ,
 )
+# org.bluetooth.characteristic.battery_power_state
 _BATT_CHAR_POW = (
     bluetooth.UUID(0x2A1A),
     bluetooth.FLAG_READ | bluetooth.FLAG_NOTIFY,
@@ -35,10 +36,15 @@ _BATT_SERV_SERVICE = (
 
 # org.bluetooth.service.enviromental_sensing
 _ENV_SERV_UUID = bluetooth.UUID(0x181A)
-# org.bluetooth.characteristic.analog
+# _CHAR_USER_DESC = (
+#     bluetooth.UUID(0x2901),
+#     bluetooth.FLAG_READ | bluetooth.FLAG_NOTIFY)
+
+# org.bluetooth.characteristic.temperature
 _TEMP_CHAR = (
     bluetooth.UUID(0x2A6E),
     bluetooth.FLAG_READ | bluetooth.FLAG_NOTIFY,
+    # (_CHAR_USER_DESC,)
 )
 _TEMP_SERV_SERVICE = (
     _ENV_SERV_UUID,
@@ -52,13 +58,13 @@ _APPEAR_CHAR = (
     bluetooth.UUID(0x2A01),
     bluetooth.FLAG_READ
 )
-# org.bluetooth.characteristic.Manufacturer Name String
+# org.bluetooth.characteristic.manufacturer_name_string
 _MANUFACT_CHAR = (
     bluetooth.UUID(0x2A29),
     bluetooth.FLAG_READ
 )
 
-# org.bluetooth.characteristic.gap.appearance.xml
+# org.bluetooth.characteristic.gap.appearance
 _ADV_APPEARANCE_GENERIC_THERMOMETER = const(768)
 
 _MANUFACT_ESPRESSIF = const(741)
@@ -107,10 +113,13 @@ class BLE_Battery_Temp:
         self._advertise()
         self._ble.gatts_write(self._appear, struct.pack(
             "h", _ADV_APPEARANCE_GENERIC_THERMOMETER))
-        self._ble.gatts_write(self._manufact, bytes('Espressif Incorporated', 'utf8'))
+        self._ble.gatts_write(self._manufact, bytes('Espressif Incorporated',
+                                                    'utf8'))
         self._ble.gatts_write(self._model, bytes(_MODEL_NUMBER, 'utf8'))
         self._ble.gatts_write(self._firm, bytes(_FIRMWARE_REV, 'utf8'))
         self._ble.gatts_write(self._lev, self._mask_8bit(*self.batt_pow_state))
+        # self._ble.gatts_write(self._char_userdesc, bytes('ESP32 CPU Temperature',
+        #                                                  'utf8'))
 
     def _irq(self, event, data):
         # Track connections so we can send notifications.
@@ -152,7 +161,8 @@ class BLE_Battery_Temp:
                     self._ble.gatts_notify(conn_handle, self._lev)
         bat_temp = int(round((esp32.raw_temperature()-32)/1.8, 2)*100)
         self._ble.gatts_write(self._temp, struct.pack(
-            "<h", bat_temp))
+            "h", bat_temp))
+
 
     def _advertise(self, interval_us=500000):
         self._ble.gap_advertise(interval_us, adv_data=self._payload)
