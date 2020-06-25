@@ -549,6 +549,12 @@ class CHAR_XML:
                             self.fields[self.actual_field][val.tag] = int(val.text.strip())
                         else:
                             self.fields[self.actual_field][val.tag] = int(val.text)
+                if val.tag == 'Multiplier':
+                    if self.fields.keys():
+                        if hasattr(val.text, 'strip'):
+                            self.fields[self.actual_field][val.tag] = int(val.text.strip())
+                        else:
+                            self.fields[self.actual_field][val.tag] = int(val.text)
             except Exception as e:
                 print(traceback.format_exc())
 
