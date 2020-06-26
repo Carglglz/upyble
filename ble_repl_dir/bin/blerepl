@@ -2679,7 +2679,7 @@ def custom_sh_cmd(cmd_inp):
                     time.sleep(0.5)
                 elif cmd_inp.split(' ')[1] == '-hr':
                     print('Device Hard Reset...')
-                    ble_cp.dev.write_service_raw(key='RX', data='import machine;machine.reset()\r')
+                    ble_cp.dev.write_char_raw(key='RX', data='import machine;machine.reset()\r')
                     time.sleep(1)
                     print('Done!')
             else:

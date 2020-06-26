@@ -155,14 +155,14 @@ if sys.platform == 'linux':
 #                             )
 #                         )
 #
-#     async def as_read_service(self, uuid):
+#     async def as_read_char(self, uuid):
 #         return bytes(await self.ble_client.read_gatt_char(uuid))
 #
-#     def read_service_raw(self, key=None, uuid=None):
+#     def read_char_raw(self, key=None, uuid=None):
 #         if key is not None:
 #             if key in list(self.readables.keys()):
 #                 data = self.loop.run_until_complete(
-#                     self.as_read_service(self.readables[key]))
+#                     self.as_read_char(self.readables[key]))
 #                 return data
 #             else:
 #                 print('Service not readable')
@@ -171,25 +171,25 @@ if sys.platform == 'linux':
 #             if uuid is not None:
 #                 if uuid in list(self.readables.values()):
 #                     data = self.loop.run_until_complete(
-#                         self.as_read_service(uuid))
+#                         self.as_read_char(uuid))
 #                     return data
 #                 else:
 #                     print('Service not readable')
 #
-#     def read_service(self, key=None, uuid=None, data_fmt="<h"):
+#     def read_char(self, key=None, uuid=None, data_fmt="<h"):
 #         try:
-#             return struct.unpack(data_fmt, self.read_service_raw(key=key, uuid=uuid))
+#             return struct.unpack(data_fmt, self.read_char_raw(key=key, uuid=uuid))
 #         except Exception as e:
 #             print(e)
 #
-#     async def as_write_service(self, uuid, data):
+#     async def as_write_char(self, uuid, data):
 #         await self.ble_client.write_gatt_char(uuid, data)
 #
-#     def write_service_raw(self, key=None, uuid=None, data=None):
+#     def write_char_raw(self, key=None, uuid=None, data=None):
 #         if key is not None:
 #             if key in list(self.writeables.keys()):
 #                 data = self.loop.run_until_complete(
-#                     self.as_write_service(self.writeables[key], bytes(data)))
+#                     self.as_write_char(self.writeables[key], bytes(data)))
 #                 return data
 #             else:
 #                 print('Service not writeable')
@@ -198,7 +198,7 @@ if sys.platform == 'linux':
 #             if uuid is not None:
 #                 if uuid in list(self.writeables.values()):
 #                     data = self.loop.run_until_complete(
-#                         self.as_write_service(uuid, bytes(data)))
+#                         self.as_write_char(uuid, bytes(data)))
 #                     return data
 #                 else:
 #                     print('Service not writeable')
@@ -206,14 +206,14 @@ if sys.platform == 'linux':
 #     def write(self, cmd):
 #         data = bytes(cmd, 'utf-8')
 #         n_bytes = len(data)
-#         self.write_service_raw(key='RX', data=data)
+#         self.write_char_raw(key='RX', data=data)
 #         return n_bytes
 #
 #     def read_all(self):
 #         try:
 #             self.raw_buff = b''
 #             while self.prompt not in self.raw_buff:
-#                 data = self.read_service_raw(key='TX')
+#                 data = self.read_char_raw(key='TX')
 #                 self.raw_buff += data
 #
 #             return self.raw_buff
@@ -498,19 +498,19 @@ class BASE_BLE_DEVICE:
                 data = self.read_descriptor_raw(key=key, char=char).decode('utf8')
                 return data
             else:
-                data, = struct.unpack(data_fmt, self.read_service_raw(key=key, char=char))
+                data, = struct.unpack(data_fmt, self.read_char_raw(key=key, char=char))
                 return data
         except Exception as e:
             print(e)
 
-    async def as_read_service(self, uuid):
+    async def as_read_char(self, uuid):
         return bytes(await self.ble_client.read_gatt_char(uuid))
 
-    def read_service_raw(self, key=None, uuid=None):
+    def read_char_raw(self, key=None, uuid=None):
         if key is not None:
             if key in list(self.readables.keys()):
                 data = self.loop.run_until_complete(
-                    self.as_read_service(self.readables[key]))
+                    self.as_read_char(self.readables[key]))
                 return data
             else:
                 print('Service not readable')
@@ -519,30 +519,34 @@ class BASE_BLE_DEVICE:
             if uuid is not None:
                 if uuid in list(self.readables.values()):
                     data = self.loop.run_until_complete(
-                        self.as_read_service(uuid))
+                        self.as_read_char(uuid))
                     return data
                 else:
                     print('Service not readable')
 
-    def read_service(self, key=None, uuid=None, data_fmt="<h"):
+    def read_char(self, key=None, uuid=None, data_fmt="<h"):
         try:
             if data_fmt == 'utf8':
-                data = self.read_service_raw(key=key, uuid=uuid).decode('utf8')
+                data = self.read_char_raw(key=key, uuid=uuid).decode('utf8')
                 return data
             else:
-                data, = struct.unpack(data_fmt, self.read_service_raw(key=key, uuid=uuid))
+                if data_fmt == 'raw':
+                    data = self.read_char_raw(key=key, uuid=uuid)
+                    return data
+                else:
+                    data, = struct.unpack(data_fmt, self.read_char_raw(key=key, uuid=uuid))
                 return data
         except Exception as e:
             print(e)
 
-    async def as_write_service(self, uuid, data):
+    async def as_write_char(self, uuid, data):
         await self.ble_client.write_gatt_char(uuid, data)
 
-    def write_service_raw(self, key=None, uuid=None, data=None):
+    def write_char_raw(self, key=None, uuid=None, data=None):
         if key is not None:
             if key in list(self.writeables.keys()):
                 data = self.loop.run_until_complete(
-                    self.as_write_service(self.writeables[key], self.fmt_data(data, CR=False))) # make fmt_data
+                    self.as_write_char(self.writeables[key], self.fmt_data(data, CR=False))) # make fmt_data
                 return data
             else:
                 print('Service not writeable')
@@ -551,7 +555,7 @@ class BASE_BLE_DEVICE:
             if uuid is not None:
                 if uuid in list(self.writeables.values()):
                     data = self.loop.run_until_complete(
-                        self.as_write_service(uuid, self.fmt_data(data, CR=False))) # make fmt_data
+                        self.as_write_char(uuid, self.fmt_data(data, CR=False))) # make fmt_data
                     return data
                 else:
                     print('Service not writeable')
@@ -666,7 +670,7 @@ class BASE_BLE_DEVICE:
     def write(self, cmd):
         data = self.fmt_data(cmd, CR=False)  # make fmt_data
         n_bytes = len(data)
-        self.write_service_raw(key='RX', data=data)
+        self.write_char_raw(key='RX', data=data)
         return n_bytes
 
     def read_all(self):
@@ -807,12 +811,12 @@ class BASE_BLE_DEVICE:
     def reset(self, silent=True):
         if not silent:
             print('MPY: soft reboot')
-        self.write_service_raw(key='RX', data=self._reset)
+        self.write_char_raw(key='RX', data=self._reset)
 
     async def as_reset(self, silent=True):
         if not silent:
             print('MPY: soft reboot')
-        await self.as_write_service(self.writeables['RX'], bytes(self._reset, 'utf-8'))
+        await self.as_write_char(self.writeables['RX'], bytes(self._reset, 'utf-8'))
         return None
 
     def get_output(self):
@@ -857,24 +861,97 @@ class BLE_DEVICE(BASE_BLE_DEVICE):
                                  'Level': 'Unknown', 'Present': 'Unknown'}
         self.get_batt_power_state()
 
+    def read_char_metadata(self):
+        for serv in self.services_rsum.keys():
+            for char in self.services_rsum[serv]:
+                if char in self.readables.keys():
+                    try:
+                        self.chars_xml[char] = get_XML_CHAR(char)
+                    except Exception as e:
+                        pass
+
+    def _autobitmask(self, val, total_size, index, size, keymap):
+        _bitmask = eval('0b{}'.format('0' * (total_size - (index + size)) + (size * '1') + '0' * index))
+        key = (val & _bitmask) >> index
+        key_str = str(key)
+        mapped_val = keymap[key_str]
+        return mapped_val
+
+    def _autoformat(self, char, data):
+        fields = {}
+        for field in char.fields:
+            fields[field] = {}
+            ctype = char.fields[field]['Ctype']
+            if isinstance(data, bytes):
+                try:
+                    val, = struct.unpack(ctype, data)
+                except Exception as e:
+                    print(char.name, e)
+            else:
+                val = data
+            total_size = 0
+            bitfield = char.fields[field]['BitField']
+            for bitf in bitfield:
+                total_size += int(bitfield[bitf]['size'])
+            for bitf in bitfield:
+                size = int(bitfield[bitf]["size"])
+                index = int(bitfield[bitf]["index"])
+                key_map = bitfield[bitf]["Enumerations"]
+                fields[field][bitf] = self._autobitmask(val,
+                                                       total_size=total_size,
+                                                       index=index,
+                                                       size=size,
+                                                       keymap=key_map)
+
+        return fields
+
+    def get_char_value(self, char):
+        char = self.chars_xml[char]
+        if len(char.fields) == 1:
+            # CASE 1
+            for field in char.fields:
+                # print(char.name, char.fields[field].keys())
+                if 'Ctype' in char.fields[field]:
+                    ctype = char.fields[field]['Ctype']
+                    if 'BitField' in char.fields[field]:
+                        # print(char.name)
+                        raw_data = self.read_char(
+                            key=char.name, data_fmt='raw')
+                        data = list(self._autoformat(char, raw_data).values())[0]
+                        return data
+                    else:
+                        if 'Enumerations' in char.fields[field]:
+                            # print('Here')
+                            keymap = char.fields[field]['Enumerations']
+                            if keymap:
+                                data = self.read_char(
+                                    key=char.name, data_fmt=ctype)
+                                mapped_val = keymap[str(data)]
+                                return mapped_val
+                            else:
+                                data = self.read_char(
+                                    key=char.name, data_fmt=ctype)
+                                return data
+                        else:
+                            data = self.read_char(
+                                key=char.name, data_fmt=ctype)
+                            return data
+
+        else:
+            print('NOT IMPLEMENTED')
+            pass
+
     def get_appearance(self):
         APPR = 'Appearance'
         if self._devinfoserv in self.services.keys():
             if APPR in self.readables.keys():
                 try:
-                    appear_code = self.read_service(
+                    appear_code = self.read_char(
                         key=APPR, data_fmt='h')
                     self.appearance = ble_appearances_dict[appear_code]
                     self.device_info[APPR] = self.appearance
                 except Exception as e:
-                    try:
-                        appear_code = self.read_service(
-                            key='Appearance', data_fmt='c')
-                        self.appearance = ble_appearances_dict[appear_code]
-                        self.device_info[APPR] = self.appearance
-                    except Exception as e:
-                        self.appearance = ble_appearances_dict[self.appearance]
-                        self.device_info[APPR] = self.appearance
+                    print(e)
                     # pass
         else:
             self.appearance = ble_appearances_dict[self.appearance]
@@ -896,7 +973,7 @@ class BLE_DEVICE(BASE_BLE_DEVICE):
         if self._devinfoserv in self.services.keys():
             if MNS in self.readables.keys():
                 try:
-                    man_string = self.read_service(
+                    man_string = self.read_char(
                         key=MNS, data_fmt=self.chars_xml[MNS].fmt)
                     self.manufacturer = man_string
                     self.device_info[MNS] = self.manufacturer
@@ -912,7 +989,7 @@ class BLE_DEVICE(BASE_BLE_DEVICE):
             MNS = 'Model Number String'
             if MNS in self.chars_xml.keys():
                 try:
-                    model_string = self.read_service(
+                    model_string = self.read_char(
                         key=MNS, data_fmt=self.chars_xml[MNS].fmt)
                     self.model_number = model_string
                     self.device_info[MNS] = self.model_number
@@ -927,7 +1004,7 @@ class BLE_DEVICE(BASE_BLE_DEVICE):
         if self._devinfoserv in self.services.keys():
             if FMW in self.chars_xml.keys():
                 try:
-                    firmware_string = self.read_service(
+                    firmware_string = self.read_char(
                         key=FMW, data_fmt=self.chars_xml[FMW].fmt)
                     self.firmware_rev = firmware_string
                     self.device_info[FMW] = self.firmware_rev
@@ -937,57 +1014,20 @@ class BLE_DEVICE(BASE_BLE_DEVICE):
         else:
             self.device_info[FMW] = self.firmware_rev
 
-    def read_char_metadata(self):
-        for serv in self.services_rsum.keys():
-            for char in self.services_rsum[serv]:
-                if char in self.readables.keys():
-                    try:
-                        self.chars_xml[char] = get_XML_CHAR(char)
-                    except Exception as e:
-                        pass
+    def unpack_batt_power_state(self):
+        pow_skeys = self.get_char_value('Battery Power State')
+        self.batt_power_state = self.map_powstate(pow_skeys)
+
+    def map_powstate(self, bp_state_dict):
+        return dict(zip(['Battery Power Information',
+                         'Discharging State',
+                         'Charging State', 'Level'], bp_state_dict.values()))
 
     def get_batt_power_state(self):
+        BPS = "Battery Power State"
         if 'Battery Service' in self.services.keys():
-            if 'Battery Power State' in self.readables.keys():
-                self.unpack_batt_power_state(self.read_service(
-                    key='Battery Power State', data_fmt='B'))
+            if BPS in self.readables.keys():
+                self.unpack_batt_power_state()
 
         else:
             pass
-
-    def unpack_batt_power_state(self, data):
-        pow_skeys = self._unmask_8bit(data)
-        self.batt_power_state = self.map_powstate(*pow_skeys)
-
-    def _unmask_8bit(self, _8bit):
-        mask3 = eval('0b11000000')
-        mask2 = eval('0b00110000')
-        mask1 = eval('0b00001100')
-        mask0 = eval('0b00000011')
-        key_3 = (_8bit & mask3) >> 6
-        key_2 = (_8bit & mask2) >> 4
-        key_1 = (_8bit & mask1) >> 2
-        key_0 = (_8bit & mask0) >> 0
-        return [key_3, key_2, key_1, key_0]
-
-    def map_powstate(self, key_state_level, key_charge_2, key_discharge_1,
-                     key_present_0):
-        key_states = {'Battery Power Information': key_present_0, 'Discharging State': key_discharge_1,
-                      'Charging State': key_charge_2, 'Level': key_state_level}
-        present_dict = {0: 'Unknown', 1: 'Not Supported',
-                        2: 'Not Present', 3: 'Present'}
-        discharge_dict = {0: 'Unknown', 1: 'Not Supported',
-                          2: 'Not Discharging', 3: 'Discharging'}
-        charge_dict = {0: 'Unknown', 1: 'Not Chargeable',
-                       2: 'Not Charging (Chargeable)',
-                       3: 'Charging (Chargeable)'}
-        level_dict = {0: 'Unknown', 1: 'Not Supported',
-                      2: 'Good Level', 3: 'Critically Low Level'}
-        states_dict = {'Battery Power Information': present_dict, 'Discharging State': discharge_dict,
-                       'Charging State': charge_dict, 'Level': level_dict}
-        pow_state = {}
-        for state in states_dict.keys():
-            # print('{}: {}'.format(
-            #     state, states_dict[state][key_states[state]]))
-            pow_state[state] = states_dict[state][key_states[state]]
-        return pow_state

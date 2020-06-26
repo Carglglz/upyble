@@ -521,10 +521,11 @@ class CHAR_XML:
                     self.fields[self.actual_field]['Quantity'] = quantity
                     try:
                         unit = ' '.join(
-                            unit_stringcode_filt.split('.')[1].split('_'))
+                            unit_stringcode_filt.split('.')[1].split('_')).strip()
                         self.fields[self.actual_field][val.tag] = unit
                         self.fields[self.actual_field]['Symbol'] = ble_SI_units_dict[unit]
                     except Exception as e:
+                        # print(traceback.format_exc())
                         try:
                             self.fields[self.actual_field][val.tag] = quantity
                             self.fields[self.actual_field]['Symbol'] = ble_SI_units_dict[quantity]
