@@ -28,7 +28,7 @@ power,watt,W
 electric charge,coulomb,C
 electric potential difference,volt,V
 capacitance,farad,F
-electric resistance,ohm,Omega
+electric resistance,ohm,Ω
 electric conductance,siemens,S
 magnetic flux,weber,Wb
 magnetic flux density,tesla,T
@@ -77,8 +77,8 @@ concentration,count per cubic metre,1/m^3
 time,minute,min
 mass density,kilogram per litre,kg/L
 mass density,mole per litre,mol/L
-length,inch,inch
-mass,pound,lbs
+length,inch,in
+mass,pound,lb
 angular velocity,revolution per minute,RPM
 energy,kilogram calorie,kcal
 velocity,kilometre per minute,km/min

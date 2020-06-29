@@ -472,9 +472,18 @@ class CHAR_XML:
                     if self.fields.keys():
                         if 'Enumerations' in self.fields[self.actual_field].keys():
                             self.fields[self.actual_field]['Enumerations'][val.attrib['key']] = val.attrib['value']
+                            if 'requires' in val.attrib:
+                                if 'Requires' not in self.fields[self.actual_field]['Enumerations']:
+                                    self.fields[self.actual_field]['Enumerations']['Requires'] = {}
+                                self.fields[self.actual_field]['Enumerations']['Requires'][val.attrib['key']] = val.attrib['requires']
+
                         else:
                             self.fields[self.actual_field]['Enumerations'] = {}
                             self.fields[self.actual_field]['Enumerations'][val.attrib['key']] = val.attrib['value']
+                            if 'requires' in val.attrib:
+                                if 'Requires' not in self.fields[self.actual_field]['Enumerations']:
+                                    self.fields[self.actual_field]['Enumerations']['Requires'] = {}
+                                self.fields[self.actual_field]['Enumerations']['Requires'][val.attrib['key']] = val.attrib['requires']
 
                 if val.tag == 'Enumerations':
                     if self.fields.keys():
@@ -502,6 +511,11 @@ class CHAR_XML:
                         if self.actual_bitfield in self.fields[self.actual_field].keys():
                             if self.fields[self.actual_field][self.actual_bitfield].keys():
                                 self.fields[self.actual_field][self.actual_bitfield][self.actual_bit]['Enumerations'][val.attrib['key']] = val.attrib['value']
+                                if 'requires' in val.attrib:
+                                    if 'Requires' not in self.fields[self.actual_field][self.actual_bitfield][self.actual_bit]['Enumerations']:
+                                        self.fields[self.actual_field][self.actual_bitfield][self.actual_bit]['Enumerations']['Requires'] = {}
+                                    self.fields[self.actual_field][self.actual_bitfield][self.actual_bit]['Enumerations']['Requires'][val.attrib['key']] = val.attrib['requires']
+
                 if val.tag == 'Enumerations':
                     if self.actual_bitfield is not None:
                         if self.actual_bitfield in self.fields[self.actual_field].keys():
@@ -556,6 +570,13 @@ class CHAR_XML:
                             self.fields[self.actual_field][val.tag] = int(val.text.strip())
                         else:
                             self.fields[self.actual_field][val.tag] = int(val.text)
+
+                if val.tag == 'Reference':
+                    if self.fields.keys():
+                        if hasattr(val.text, 'strip'):
+                            self.fields[self.actual_field][val.tag] = ' '.join(ch.capitalize() for ch in val.text.strip().split('.')[-1].split('_'))
+                        else:
+                            self.fields[self.actual_field][val.tag] = val.text
             except Exception as e:
                 print(traceback.format_exc())
 

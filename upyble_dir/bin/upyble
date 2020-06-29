@@ -190,12 +190,13 @@ wrapper = textwrap.TextWrapper(initial_indent=" "*4,)
 
 
 def print_wrp(text, mg=3, f_indent=4, indent=0,
-              wrapper=wrapper, f_indent_char='', r_indent_char=' '):
+              wrapper=wrapper, f_indent_char='',
+              r_indent_char=' ', s_indent=' '):
     columns, rows = os.get_terminal_size(0)
     if f_indent_char != '':
         f_indent += -1
     wrapper.initial_indent = f_indent_char + r_indent_char * f_indent
-    wrapper.subsequent_indent = ' '*indent
+    wrapper.subsequent_indent = s_indent + ' ' * indent
     wrapper.width = columns-mg
     print('\n'.join(wrapper.wrap(text)))
 #############################################
@@ -893,8 +894,9 @@ if args.t is None:
 
 if args.m == 'get_services':
     print('Getting services...')
-    bdev = BASE_BLE_DEVICE(args.t)
+    bdev = BLE_DEVICE(args.t)
     bdev.connect(n_tries=args.n, show_servs=True, log=False)
+    bdev.read_char_metadata()
     if not bdev.connected:
         print('Device not reachable try again.')
         pass
@@ -923,21 +925,33 @@ if args.m == 'get_services':
                     else:
                         print_wrp('┃', f_indent_char='')
                     char_xml = get_XML_CHAR(char)
-                    char_value = bdev.read_char(key=char, data_fmt=char_xml.fmt)
+                    char_value = bdev.get_char_value(char)
+                    try:
+                        string_data = bdev.pformat_char_value(char_value,
+                                                              rtn=True,
+                                                              prnt=False,
+                                                              one_line=True,
+                                                              only_val=True)
+                    except Exception as e:
+                        string_data = bdev.pformat_char_flags(char_value, sep='\n - ')
+
                     if not is_last_serv:
                         if is_last_char:
-                            print_wrp("┗━━━\u001b[44;1m{:^30}\u001b[0m {} {}".format(char, char_xml.fmt_val(char_value), char_xml.unit_symbol),
-                                      f_indent=4, f_indent_char='┃')
+                            print_wrp("┗━━━\u001b[44;1m{:^30}\u001b[0m {} ".format(char, string_data),
+                                      f_indent=4, f_indent_char='┃',
+                                      indent=40, s_indent='┃')
                         else:
-                            print_wrp("┣━━━\u001b[44;1m{:^30}\u001b[0m {} {}".format(char, char_xml.fmt_val(char_value), char_xml.unit_symbol),
-                                      f_indent=4, f_indent_char='┃')
+                            print_wrp("┣━━━\u001b[44;1m{:^30}\u001b[0m {} ".format(char, string_data),
+                                      f_indent=4, f_indent_char='┃', indent=40,
+                                      s_indent='┃   ┃')
                     else:
                         if is_last_char:
-                            print_wrp("┗━━━\u001b[44;1m{:^30}\u001b[0m {} {}".format(char, char_xml.fmt_val(char_value), char_xml.unit_symbol),
-                                      f_indent=4, f_indent_char='')
+                            print_wrp("┗━━━\u001b[44;1m{:^30}\u001b[0m {} ".format(char, string_data),
+                                      f_indent=4, f_indent_char='', indent=40)
                         else:
-                            print_wrp("┣━━━\u001b[44;1m{:^30}\u001b[0m {} {}".format(char, char_xml.fmt_val(char_value), char_xml.unit_symbol),
-                                      f_indent=4, f_indent_char='')
+                            print_wrp("┣━━━\u001b[44;1m{:^30}\u001b[0m {} ".format(char, string_data),
+                                      f_indent=4, f_indent_char='', indent=40,
+                                      s_indent='     ┃')
                     for desc in bdev.chars_desc_rsum[char]:
                         if desc == 'Characteristic User Description':
                             if not is_last_serv:
@@ -1120,32 +1134,35 @@ elif args.m == 'follow':
                 try:
                     for char in chars_to_read:
                         if char in list(bdev.readables.keys()):
-                            scale = args.x
-                            if CHARS_XML_AUTO[char].dec_exp is not None:
-                                scale = 1/(10**CHARS_XML_AUTO[char].dec_exp)
-                            # data = bdev.read_char(key=char, data_fmt=CHARS_XML_AUTO[char].fmt)
+                            # scale = args.x
+                            # if CHARS_XML_AUTO[char].dec_exp is not None:
+                            #     scale = 1/(10**CHARS_XML_AUTO[char].dec_exp)
+                            # # data = bdev.read_char(key=char, data_fmt=CHARS_XML_AUTO[char].fmt)
                             data = bdev.get_char_value(char)
-                            if isinstance(data, str):
-                                log.info("{} [{}] : {} {}".format(args.s, char,
-                                                                  data, CHARS_XML_AUTO[char].unit_symbol))
+
+                            if char == 'Battery Power State':
+                                bdev.get_batt_power_state()
+                                log.info("{} [{}] : {}".format(args.s, char,
+                                                                  ','.join(bdev.batt_power_state.values())))
                             else:
-                                if char == 'Battery Power State':
-                                    bdev.get_batt_power_state()
-                                    log.info("{} [{}] : {}".format(args.s, char,
-                                                                      ','.join(bdev.batt_power_state.values())))
-                                elif isinstance(data, dict):
-                                    log.info("{} [{}] : {}".format(args.s, char,
-                                                                      ','.join(data.values())))
+                                try:
+                                    string_data = bdev.pformat_char_value(data,
+                                                                          rtn=True,
+                                                                          prnt=False,
+                                                                          one_line=True,
+                                                                          only_val=True)
+                                    log.info("{} [{}] : {} ".format(args.s, char,
+                                                                    string_data))
+                                except Exception as e:
+                                    try:
+                                        string_data = bdev.pformat_char_flags(data)
+                                        log.info("{} [{}] : {} ".format(args.s, char,
+                                                                        string_data))
+                                    except Exception as e:
+                                        log.info("{} [{}] : {} ".format(args.s,
+                                                                        char,
+                                                                        data))
 
-                                else:
-                                    log.info("{} [{}] : {} {}".format(args.s, char,
-                                                                  data/scale, CHARS_XML_AUTO[char].unit_symbol))
-
-                        # elif args.s in servs_values:
-                        #     data = bdev.read_char(uuid=args.s, data_fmt=args.fmt)[0]
-                        #     log.info("{} [{}] : {:.2f} {}".format(servs_keys[servs_values.index(args.s)],
-                        #                                  ble_char_dict[args.s],
-                        #                                  data/args.x, args.u))
                         else:
                             log.warning("Characterisctic {} not readable".format(char))
                     time.sleep(args.tm)
@@ -1168,26 +1185,37 @@ elif args.m == 'follow':
                             for char in bdev.services_rsum[serv]:
                                 scale = args.x
                                 if char in list(CHARS_XML_AUTO.keys()):
-                                    if CHARS_XML_AUTO[char].dec_exp is not None:
-                                        scale = 1/(10**CHARS_XML_AUTO[char].dec_exp)
+                                    # if CHARS_XML_AUTO[char].dec_exp is not None:
+                                    #     scale = 1/(10**CHARS_XML_AUTO[char].dec_exp)
                                     # log.info('Reading : {}'.format(char))
                                     # data = bdev.read_char(key=char, data_fmt=CHARS_XML_AUTO[char].fmt)
                                     data = bdev.get_char_value(char)
-                                    if isinstance(data, str):
-                                        log.info("{} [{}] : {} {}".format(serv, char,
-                                                                          data, CHARS_XML_AUTO[char].unit_symbol))
+                                    # if isinstance(data, str):
+                                    #     log.info("{} [{}] : {} {}".format(serv, char,
+                                    #                                       data, CHARS_XML_AUTO[char].unit_symbol))
+                                    # else:
+                                    if char == 'Battery Power State':
+                                        bdev.get_batt_power_state()
+                                        log.info("{} [{}] : {}".format(serv, char,
+                                                                          ','.join(bdev.batt_power_state.values())))
+
+                                    # elif isinstance(data, dict):
+                                    #     log.info("{} [{}] : {}".format(serv, char, data))
+
                                     else:
-                                        if char == 'Battery Power State':
-                                            bdev.get_batt_power_state()
-                                            log.info("{} [{}] : {}".format(serv, char,
-                                                                              ','.join(bdev.batt_power_state.values())))
-
-                                        elif isinstance(data, dict):
-                                            log.info("{} [{}] : {}".format(serv, char, data))
-
-                                        else:
-                                            log.info("{} [{}] : {} {}".format(serv, char,
-                                                                          data/scale, CHARS_XML_AUTO[char].unit_symbol))
+                                        try:
+                                            string_data = bdev.pformat_char_value(data,
+                                                                                  rtn=True,
+                                                                                  prnt=False,
+                                                                                  one_line=True,
+                                                                                  only_val=True)
+                                            log.info("{} [{}] : {} ".format(serv, char, string_data))
+                                        except Exception as e:
+                                            try:
+                                                string_data = bdev.pformat_char_flags(data)
+                                                log.info("{} [{}] : {} ".format(serv, char, string_data))
+                                            except Exception as e:
+                                                log.info("{} [{}] : {} ".format(serv, char, data))
 
                                 # elif args.s in servs_values:
                                 #     data = bdev.read_char(uuid=args.s, data_fmt=args.fmt)[0]
