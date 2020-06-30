@@ -4,15 +4,17 @@
 
 [![PyPI version](https://badge.fury.io/py/upyble.svg)](https://badge.fury.io/py/upyble)[![PyPI license](https://img.shields.io/pypi/l/ansicolortags.svg)](https://pypi.python.org/pypi/ansicolortags/)
 
-### Command line tool for Bluetooth Low Energy MicroPython devices
+### Command line tool for Bluetooth Low Energy  devices
 
-**uPyble** is intended to be a command line tool [upydev-like](https://github.com/Carglglz/upydev/) to make easier the development, prototyping and testing process of devices based on boards running MicroPython with **Bluetooth Low Energy** capabilities.
+**uPyble** is intended to be a command line tool [upydev-like](https://github.com/Carglglz/upydev/) to make easier the development, prototyping and testing process of devices based on boards running *MicroPython with **Bluetooth Low Energy** capabilities.
+
+\*( Any other BLE device should work as well)
 
 ⚠️ ***Keep in mind that this project is in ALPHA state, sometimes, some commands may not work/return anything*** ⚠️
 
 ### Features:
 
-* Command line wireless communication/control of MicroPython devices.
+* Command line wireless communication/control of MicroPython/other devices.
 * Custom commands to automate communication/control
 * Command line autocompletion
 * Terminal BLE SHELL-REPL 🔸🔺
@@ -62,7 +64,7 @@ BLE device/s found: 1
 
 #### Create a configuration file:
 
-upyble will use local working directory configuration unless it does not find any or manually indicated with `-g` option.
+\*upyble will use local working directory configuration unless it does not find any or manually indicated with `-g` option.
 
 - To save configuration in working directory: `$ upyble config -t [UPYDEVICE UUID]`
   
@@ -74,6 +76,8 @@ upyble will use local working directory configuration unless it does not find an
   e.g.
   
   `$ upyble config -t 9998175F-9A91-4CA2-B5EA-482AFC3453B9 -g `
+  
+  \* Be aware that some devices may generate random UUID every a couple of minutes, so this won't be useful in those cases.
 
 ------
 
@@ -105,7 +109,7 @@ This means that if the first argument is not a Mode keyword it assumes it is a '
 - **`upyble get_apcode`**: to get appearance code from an appearance tag, use *`-aptag`* to indicate the tag
 - **`upyble get_mtag`:** to get manufacturer tag from manufacturer code, use *`-mcode`* to indicate the code
 - **`upyble get_mcode`**: to get manufacturer code from a manufacturer tag, use *`-mtag`* to indicate the tag
-- **`upyble cmdata`**: to get characteristic metadata (name, type, uuid, unit, format, notes...). (Not all characteristics are available yet), Use *`-c`* option to indicate characteristic or *`-c all`* to see all that are available.
+- **`upyble cmdata`**: to get characteristic metadata (name, type, uuid, unit, format, notes...). (Not all characteristics are available yet), Use *`-c`* option to indicate characteristic or *`-c all`* to see all that are available. Use *`-xml`* to see the xml file instead.
 - **`upyble cmdata_t`**: get_cmdata in table format.
 - **`upyble dmdata `**:  to get descriptor metadata (Name, uuid, format...). Use *`-desc`* option to indicate a descriptor or  *`-desc all`* to see all that are available.
 - **`upyble follow`**:   to read from a service (see *`-s`,* *` -c`* , *` -tm`*) , e.g : `upyble follow -s "Battery Service" `, will read all readable characteristics, or use  *` -c`*  to indicate a specific one/group. e.g:  `upyble follow -s "Battery Service" -c "Battery Level"`. This mode autodetects format and unit from characteristic metadata
@@ -171,7 +175,9 @@ Following service: all
 ^CDisconnected successfully
 ```
 
-____
+See more usage examples at [EXAMPLES](https://github.com/Carglglz/upyble/blob/master/DOCS/EXAMPLES.md) doc.
+
+___
 
 ### ABOUT
 

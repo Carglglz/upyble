@@ -51,7 +51,7 @@ helparg = '''
 - tscan:    to scan for BLE devices, results with table format
 - sconf:    to scan and configure a device that matches a name -d [NAME]
 - config:   to configure a device use -t to indicate UUID of the device
-- get_services: to get services of a device
+- get_services: to get services of a device (see -r and -mdata)
 - get_stag: to get service tag from a service code, use -scode to indicate the code
 - get_scode: to get service code from a service tag, use -stag to indicate the tag
 - get_ctag: to get characteristic tag from characteristic code, use -ccode to indicate the code
@@ -60,8 +60,7 @@ helparg = '''
 - get_apcode: to get appearance code from an appearance tag, use -aptag to indicate the tag
 - get_mtag: to get manufacturer tag from manufacturer code, use -mcode to indicate the code
 - get_mcode: to get manufacturer code from a manufacturer tag, use -mtag to indicate the tag
-- cmdata: to get characteristic metadata (name, type, uuid, unit, format, notes...).
-              Use -c option to indicate characteristic
+- cmdata: to get characteristic metadata (name, type, uuid, unit, format, notes...), see -c and -xml
 - cmdata_t: get_cmdata in table format.
 - follow:   to read from a service (see -s, -c, -tm), autodetects format and unit from characteristic metadata
 - rfollow: to read from a service (see -s, -c, -tm, -u, -fmt, -x)
@@ -318,9 +317,12 @@ if args.m == 'tscan':
         print('No BLE device found')
     else:
         print('BLE device/s found: {}'.format(len(devs)))
-        print('=' * 121)
-        print('{0:^20} | {1:^40} | {2:^10} | {3:^40} |'.format(
+        print('┏{0}━┳━{1}━┳━{2}━┳━{3}━┓'.format(
+            '━'*20, '━'*40, '━'*10, '━'*40))
+        print('┃{0:^20} ┃ {1:^40} ┃ {2:^10} ┃ {3:^40} ┃'.format(
             'NAME', 'UUID', 'RSSI (dBm)', 'Services'))
+        print('┣{0}━╋━{1}━╋━{2}━╋━{3}━┫'.format(
+            '━'*20, '━'*40, '━'*10, '━'*40))
         for dev in devs:
             services = ['']
             if hasattr(dev, 'metadata'):
@@ -331,8 +333,10 @@ if args.m == 'tscan':
                         except Exception as e:
                             services = ['']
 
-            print('{0:^20} | {1:^40} | {2:^10} | {3:^40} |'.format(dev.name, dev.address,
-                                                         dev.rssi, ','.join(services)))
+            print('┃{0:^20} ┃ {1:^40} ┃ {2:^10} ┃ {3:^40} ┃'.format(dev.name, dev.address,
+                                                         int(dev.rssi), ','.join(services)))
+        print('┗{0}━┻━{1}━┻━{2}━┻━{3}━┛'.format(
+            '━'*20, '━'*40, '━'*10, '━'*40))
     sys.exit()
 # SCAN CONFIG
 if args.m == 'sconf':
