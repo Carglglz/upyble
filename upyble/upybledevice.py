@@ -1388,7 +1388,6 @@ class BLE_DEVICE(BASE_BLE_DEVICE):
         except Exception as e:
             print(e)
 
-
     def get_appearance(self):
         APPR = 'Appearance'
         if self._devinfoserv in self.services.keys():

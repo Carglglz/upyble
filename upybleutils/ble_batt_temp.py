@@ -99,7 +99,10 @@ class BLE_Battery_Temp:
         percentage = int(round((bat_volt - 3.3) / (4.23 - 3.3) * 100, 1))
         self.batt_buffer = array('B', (percentage for _ in range(30)))
         self.buffer_index = 0
-        self.batt_pow_state = [3, 3, 2, 3]  # Present, Discharging, Not Charging, Good Level
+        if percentage > 10:
+            self.batt_pow_state = [2, 2, 3, 3]  # Present, Discharging, Not Charging, Good Level
+        else:
+            self.batt_pow_state = [3, 2, 3, 3]
         self._ble = ble
         self._ble.active(True)
         self._ble.irq(handler=self._irq)
@@ -150,7 +153,7 @@ class BLE_Battery_Temp:
         #         self._ble.gatts_notify(conn_handle, self._handle)
         if notify:
             if mpercentage > 35:
-                self.batt_pow_state = [2, 3, 3, 2]
+                self.batt_pow_state = [2, 3, 3, 3]
                 self._ble.gatts_write(self._lev, self._mask_8bit(*self.batt_pow_state))
                 for conn_handle in self._connections:
                     self._ble.gatts_notify(conn_handle, self._lev)
@@ -162,7 +165,6 @@ class BLE_Battery_Temp:
         bat_temp = int(round((esp32.raw_temperature()-32)/1.8, 2)*100)
         self._ble.gatts_write(self._temp, struct.pack(
             "h", bat_temp))
-
 
     def _advertise(self, interval_us=500000):
         self._ble.gap_advertise(interval_us, adv_data=self._payload)
