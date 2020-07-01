@@ -34,17 +34,17 @@ def ble_scan(log=False):
 # MACOS
 
 
-NUS = {"6E400001-B5A3-F393-E0A9-E50E24DCCA9E": "Nordic UART Service",
-       "6E400003-B5A3-F393-E0A9-E50E24DCCA9E": 'TX',
-       "6E400002-B5A3-F393-E0A9-E50E24DCCA9E": 'RX'}
+# NUS = {"6E400001-B5A3-F393-E0A9-E50E24DCCA9E": "Nordic UART Service",
+#        "6E400003-B5A3-F393-E0A9-E50E24DCCA9E": 'TX',
+#        "6E400002-B5A3-F393-E0A9-E50E24DCCA9E": 'RX'}
+#
+# # Linux # if sys.platform linux :
+# if sys.platform == 'linux':
+NUS = {"6e400001-b5a3-f393-e0a9-e50e24dcca9e": "Nordic UART Service",
+       "6e400003-b5a3-f393-e0a9-e50e24dcca9e": 'TX',
+       "6e400002-b5a3-f393-e0a9-e50e24dcca9e": 'RX'}
 
-# Linux # if sys.platform linux :
-if sys.platform == 'linux':
-    NUS = {"6e400001-b5a3-f393-e0a9-e50e24dcca9e": "Nordic UART Service",
-           "6e400003-b5a3-f393-e0a9-e50e24dcca9e": 'TX',
-           "6e400002-b5a3-f393-e0a9-e50e24dcca9e": 'RX'}
-
-
+ble_char_dict.update(NUS)
 # class BASE_SBLE_DEVICE:
 #     def __init__(self, scan_dev, init=False):
 #         # BLE
@@ -389,20 +389,20 @@ class BASE_BLE_DEVICE:
     # SERVICES
     def get_services(self, log=True):
         for service in self.ble_client.services:
-            if service.description == 'Unknown' and service.uuid in list(NUS.keys()):
+            if service.description == 'Unknown' and service.uuid.lower() in list(NUS.keys()):
                 is_NUS = True
                 if log:
                     print("[Service] {0}: {1}".format(
-                        service.uuid, NUS[service.uuid]))
-                self.services[NUS[service.uuid]] = {
-                    'UUID': service.uuid, 'CHARS': {}}
+                        service.uuid.lower(), NUS[service.uuid.lower()]))
+                self.services[NUS[service.uuid.lower()]] = {
+                    'UUID': service.uuid.lower(), 'CHARS': {}}
             else:
                 is_NUS = False
                 if log:
                     print("[Service] {0}: {1}".format(
-                        service.uuid, service.description))
+                        service.uuid.lower(), service.description))
                 self.services[service.description] = {
-                    'UUID': service.uuid, 'CHARS': {}}
+                    'UUID': service.uuid.lower(), 'CHARS': {}}
 
             for char in service.characteristics:
                 if is_NUS:
@@ -411,11 +411,11 @@ class BASE_BLE_DEVICE:
                     if "write" in char.properties:
                         self.writeables[NUS[char.uuid]] = char.uuid
                     try:
-                        self.services[NUS[service.uuid]]['CHARS'][char.uuid] = {NUS[char.uuid]: ",".join(
+                        self.services[NUS[service.uuid.lower()]]['CHARS'][char.uuid] = {NUS[char.uuid]: ",".join(
                             char.properties), 'Descriptors': {descriptor.uuid: descriptor.handle for descriptor in char.descriptors}}
                     except Exception as e:
 
-                        self.services[NUS[service.uuid]]['CHARS'][char.uuid] = {char.description: ",".join(
+                        self.services[NUS[service.uuid.lower()]]['CHARS'][char.uuid] = {char.description: ",".join(
                             char.properties), 'Descriptors': {descriptor.uuid: descriptor.handle for descriptor in char.descriptors}}
                 else:
                     if "read" in char.properties:
@@ -434,10 +434,12 @@ class BASE_BLE_DEVICE:
                     except Exception as e:
                         self.services[service.description]['CHARS'][char.uuid] = {char.description: ",".join(
                             char.properties), 'Descriptors': {descriptor.uuid: descriptor.handle for descriptor in char.descriptors}}
-
-                    self.chars_desc_rsum[ble_char_dict[char.uuid]] = {}
-                    for descriptor in char.descriptors:
-                        self.chars_desc_rsum[ble_char_dict[char.uuid]][ble_descriptors_dict[descriptor.uuid]] = descriptor.handle
+                    try:
+                        self.chars_desc_rsum[ble_char_dict[char.uuid]] = {}
+                        for descriptor in char.descriptors:
+                            self.chars_desc_rsum[ble_char_dict[char.uuid]][ble_descriptors_dict[descriptor.uuid]] = descriptor.handle
+                    except Exception as e:
+                        pass
 
 
                 if log:

@@ -1,6 +1,7 @@
 import upyble
 import xml.etree.ElementTree as ET
 from upyble.SI_units import ble_SI_units_dict, DATA_FMT
+from bleak.backends.corebluetooth.utils import cb_uuid_to_str
 import traceback
 
 CHARS_XML_DIR = "{}/chars_xml".format(upyble.__path__[0])
@@ -281,7 +282,7 @@ TK = ['Aerobic Heart Rate Lower Limit',
       'Weight Scale Feature',
       'Wind Chill']
 
-CK_codes = [ck.replace('0x', '') for ck in CK]
+CK_codes = [cb_uuid_to_str(ck.replace('0x', '')) for ck in CK]
 ble_char_dict = dict(zip(CK_codes, TK))
 ble_char_dict_rev = dict(zip(TK, CK_codes))
 
