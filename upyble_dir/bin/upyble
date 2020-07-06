@@ -920,63 +920,64 @@ if args.m == 'get_services':
                     print_wrp("\u001b[42;1m{}\u001b[0m".format(service),
                               f_indent_char='┣', r_indent_char='━')
                 for char in bdev.services_rsum[service]:
-                    if char == bdev.services_rsum[service][-1]:
-                        is_last_char = True
-                    else:
-                        is_last_char = False
-                    if not is_last_serv:
-                        print_wrp('┃', f_indent_char='┃')
-                    else:
-                        print_wrp('┃', f_indent_char='')
-                    char_xml = get_XML_CHAR(char)
-                    char_value = bdev.get_char_value(char)
-                    try:
-                        string_data = bdev.pformat_char_value(char_value,
-                                                              rtn=True,
-                                                              prnt=False,
-                                                              one_line=True,
-                                                              only_val=True)
-                    except Exception as e:
-                        string_data = bdev.pformat_char_flags(char_value, sep='\n - ')
+                    if char in bdev.readables:
+                        if char == bdev.services_rsum[service][-1]:
+                            is_last_char = True
+                        else:
+                            is_last_char = False
+                        if not is_last_serv:
+                            print_wrp('┃', f_indent_char='┃')
+                        else:
+                            print_wrp('┃', f_indent_char='')
+                        char_xml = get_XML_CHAR(char)
+                        char_value = bdev.get_char_value(char)
+                        try:
+                            string_data = bdev.pformat_char_value(char_value,
+                                                                  rtn=True,
+                                                                  prnt=False,
+                                                                  one_line=True,
+                                                                  only_val=True)
+                        except Exception as e:
+                            string_data = bdev.pformat_char_flags(char_value, sep='\n - ')
 
-                    if not is_last_serv:
-                        if is_last_char:
-                            print_wrp("┗━━━\u001b[44;1m{:^30}\u001b[0m {} ".format(char, string_data),
-                                      f_indent=4, f_indent_char='┃',
-                                      indent=40, s_indent='┃')
-                        else:
-                            print_wrp("┣━━━\u001b[44;1m{:^30}\u001b[0m {} ".format(char, string_data),
-                                      f_indent=4, f_indent_char='┃', indent=40,
-                                      s_indent='┃   ┃')
-                    else:
-                        if is_last_char:
-                            print_wrp("┗━━━\u001b[44;1m{:^30}\u001b[0m {} ".format(char, string_data),
-                                      f_indent=4, f_indent_char='', indent=40)
-                        else:
-                            print_wrp("┣━━━\u001b[44;1m{:^30}\u001b[0m {} ".format(char, string_data),
-                                      f_indent=4, f_indent_char='', indent=40,
-                                      s_indent='     ┃')
-                    for desc in bdev.chars_desc_rsum[char]:
-                        if desc == 'Characteristic User Description':
-                            if not is_last_serv:
-                                print_wrp('┃', f_indent_char='┃', f_indent=8)
+                        if not is_last_serv:
+                            if is_last_char:
+                                print_wrp("┗━━━\u001b[44;1m{:^30}\u001b[0m {} ".format(char, string_data),
+                                          f_indent=4, f_indent_char='┃',
+                                          indent=40, s_indent='┃')
                             else:
-                                print_wrp('┃', f_indent_char='', f_indent=8)
-                            desc_value = bdev.read_descriptor(key=desc, char=char)
-                            if not is_last_serv:
-                                # if is_last_char:
-                                print_wrp("┗━━━\u001b[45;1m{:^30}\u001b[0m {}".format(desc, desc_value),
-                                          f_indent=8, f_indent_char='┃')
-                            #     else:
-                            #         print_wrp("┣━━━\u001b[45;1m{:^30}\u001b[0m {} ".format(char, desc_value),
-                            #                   f_indent=8, f_indent_char='┃')
+                                print_wrp("┣━━━\u001b[44;1m{:^30}\u001b[0m {} ".format(char, string_data),
+                                          f_indent=4, f_indent_char='┃', indent=40,
+                                          s_indent='┃   ┃')
+                        else:
+                            if is_last_char:
+                                print_wrp("┗━━━\u001b[44;1m{:^30}\u001b[0m {} ".format(char, string_data),
+                                          f_indent=4, f_indent_char='', indent=40)
                             else:
-                                # if is_last_char:
-                                print_wrp("┗━━━\u001b[45;1m{:^30}\u001b[0m {} ".format(desc, desc_value),
-                                          f_indent=8, f_indent_char='')
-                                # else:
-                                #     print_wrp("┣━━━\u001b[45;1m{:^30}\u001b[0m {} ".format(char, desc_value),
-                                #               f_indent=8, f_indent_char='')
+                                print_wrp("┣━━━\u001b[44;1m{:^30}\u001b[0m {} ".format(char, string_data),
+                                          f_indent=4, f_indent_char='', indent=40,
+                                          s_indent='     ┃')
+                        for desc in bdev.chars_desc_rsum[char]:
+                            if desc == 'Characteristic User Description':
+                                if not is_last_serv:
+                                    print_wrp('┃', f_indent_char='┃', f_indent=8)
+                                else:
+                                    print_wrp('┃', f_indent_char='', f_indent=8)
+                                desc_value = bdev.read_descriptor(key=desc, char=char)
+                                if not is_last_serv:
+                                    # if is_last_char:
+                                    print_wrp("┗━━━\u001b[45;1m{:^30}\u001b[0m {}".format(desc, desc_value),
+                                              f_indent=8, f_indent_char='┃')
+                                #     else:
+                                #         print_wrp("┣━━━\u001b[45;1m{:^30}\u001b[0m {} ".format(char, desc_value),
+                                #                   f_indent=8, f_indent_char='┃')
+                                else:
+                                    # if is_last_char:
+                                    print_wrp("┗━━━\u001b[45;1m{:^30}\u001b[0m {} ".format(desc, desc_value),
+                                              f_indent=8, f_indent_char='')
+                                    # else:
+                                    #     print_wrp("┣━━━\u001b[45;1m{:^30}\u001b[0m {} ".format(char, desc_value),
+                                    #               f_indent=8, f_indent_char='')
 
         if args.mdata:
             print('')
