@@ -930,7 +930,10 @@ if args.m == 'get_services':
                         else:
                             print_wrp('┃', f_indent_char='')
                         char_xml = get_XML_CHAR(char)
-                        char_value = bdev.get_char_value(char)
+                        try:
+                            char_value = bdev.get_char_value(char)
+                        except Exception as e:
+                            char_value = {char: {'Value': ''}}
                         try:
                             string_data = bdev.pformat_char_value(char_value,
                                                                   rtn=True,

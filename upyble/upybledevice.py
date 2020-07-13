@@ -389,7 +389,7 @@ class BASE_BLE_DEVICE:
     # SERVICES
     def get_services(self, log=True):
         for service in self.ble_client.services:
-            if service.description == 'Unknown' and service.uuid.lower() in list(NUS.keys()):
+            if service.description == 'Nordic UART Service' and service.uuid.lower() in list(NUS.keys()):
                 is_NUS = True
                 if log:
                     print("[Service] {0}: {1}".format(

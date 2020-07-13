@@ -12,6 +12,7 @@ from micropython import const
 from array import array
 from ads1115 import ADS1115
 from init_ADS import MY_ADS, i2c
+from upynotify import NOTIFYER
 import os
 import sys
 # import esp32
@@ -99,6 +100,7 @@ class BLE_Battery_Temp:
         self.ads_dev.init()
         # self.ads_dev.ads.conversion_start(7, channel1=self.ads_dev.channel)
         self.irq_busy = False
+        self.buzz = NOTIFYER(25, 13)
         self.i = 0
         bat_volt = round(((self.bat.read()*2)/4095)*3.6, 2)
         percentage = int(round((bat_volt - 3.3) / (4.23 - 3.3) * 100, 1))
@@ -138,6 +140,7 @@ class BLE_Battery_Temp:
         if event == _IRQ_CENTRAL_CONNECT:
             conn_handle, _, _, = data
             self._connections.add(conn_handle)
+            self.buzz.buzz_beep(150, 2, 100, 4000)
         elif event == _IRQ_CENTRAL_DISCONNECT:
             conn_handle, _, _, = data
             self._connections.remove(conn_handle)
