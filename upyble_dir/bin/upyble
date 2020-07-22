@@ -62,6 +62,7 @@ helparg = '''
 - get_mcode: to get manufacturer code from a manufacturer tag, use -mtag to indicate the tag
 - cmdata: to get characteristic metadata (name, type, uuid, unit, format, notes...), see -c and -xml
 - cmdata_t: get_cmdata in table format.
+- dmdata : to get descriptor metadata (Name, uuid, format) (see -desc option)
 - follow:   to read from a service (see -s, -c, -tm), autodetects format and unit from characteristic metadata
 - rfollow: to read from a service (see -s, -c, -tm, -u, -fmt, -x)
 - see: To get specific info about a devices group use -G option as "see -G [GROUP NAME]"
