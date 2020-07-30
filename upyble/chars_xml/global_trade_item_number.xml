@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--Copyright 2017 Bluetooth SIG, Inc. All rights reserved.-->
+<Characteristic xsi:noNamespaceSchemaLocation="http://schemas.bluetooth.org/Documents/characteristic.xsd" name="Global Trade Item Number" type="org.bluetooth.characteristic.global_trade_item_number" uuid="2AFA" last-modified="2017-07-11" approved="Yes" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <InformativeText>
+    <Abstract>
+The Global Trade Item Number characteristic represents an identifier as issued by GS1 [GS1 General Specifications; http://www.gs1.org/barcodes-epcrfid-id-keys/gs1-general-specifications], which may consist up to 14 digits, and is here represented as a 48-bit unsigned integer.</Abstract>
+  </InformativeText>
+  <Value>
+    <Field name="Global Trade Item Number">
+      <Format>uint48</Format>
+    </Field>
+  </Value>
+</Characteristic>

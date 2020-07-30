@@ -89,3 +89,9 @@ time,hour,h
 moment of force,newton metre,Nm
 pressure,millimetre of mercury,mmHg
 metabolic equivalent,metabolic equivalent,MET
+volume flow,liter per second,L/s
+energy,kilowatt hour,kWh
+luminous efficacy,lumen per watt,lm/W
+luminous energy,lumen per hour,lm/h
+luminous exposure,lux hour,lx/h
+mass flow,gram per second,g/s

@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--Copyright 2017 Bluetooth SIG, Inc. All rights reserved.-->
+<Characteristic xsi:noNamespaceSchemaLocation="http://schemas.bluetooth.org/Documents/characteristic.xsd" name="Temperature 8 Statistics" type="org.bluetooth.characteristic.temperature_8_statistics" uuid="2B0F" last-modified="2017-07-11" approved="Yes" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <InformativeText>
+    <Abstract>This characteristic aggregates four instances of the Temperature 8 characteristic, and one instance of the Time Exponential 8 characteristic.</Abstract>
+  </InformativeText>
+  <Value>
+    <Field name="Average">
+      <Reference>org.bluetooth.characteristic.temperature_8</Reference>
+    </Field>
+    <Field name="Standard Deviation Value">
+      <Reference>org.bluetooth.characteristic.temperature_8</Reference>
+    </Field>
+    <Field name="Minimum Value">
+      <Reference>org.bluetooth.characteristic.temperature_8</Reference>
+    </Field>
+    <Field name="Maximum Value">
+      <Reference>org.bluetooth.characteristic.temperature_8</Reference>
+    </Field>
+    <Field name="Sensing Duration">
+      <Reference>org.bluetooth.characteristic.time_exponential_8</Reference>
+    </Field>
+  </Value>
+</Characteristic>

@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--Copyright 2017 Bluetooth SIG, Inc. All rights reserved.-->
+<Characteristic xsi:noNamespaceSchemaLocation="http://schemas.bluetooth.org/Documents/characteristic.xsd" name="Electric Current Specification" type="org.bluetooth.characteristic.electric_current_specification" uuid="2AF0" last-modified="2017-07-11" approved="Yes" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <InformativeText>
+    <Abstract>This characteristic aggregates three instances of the Electric Current characteristic to represent a specification of electric current values.</Abstract>
+  </InformativeText>
+  <Value>
+    <Field name="Minimum Electric Current Value">
+      <Reference>org.bluetooth.characteristic.electric_current</Reference>
+    </Field>
+    <Field name="Typical Electric Current Value">
+      <Reference>org.bluetooth.characteristic.electric_current</Reference>
+    </Field>
+    <Field name="Maximum Electric Current Value">
+      <Reference>org.bluetooth.characteristic.electric_current</Reference>
+    </Field>
+  </Value>
+</Characteristic>

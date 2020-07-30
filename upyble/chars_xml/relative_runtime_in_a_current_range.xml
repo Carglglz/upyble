@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--Copyright 2017 Bluetooth SIG, Inc. All rights reserved.-->
+<Characteristic xsi:noNamespaceSchemaLocation="http://schemas.bluetooth.org/Documents/characteristic.xsd" name="Relative Runtime In A Current Range" type="org.bluetooth.characteristic.relative_runtime_in_a_current_range" uuid="2B07" last-modified="2017-07-11" approved="Yes" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <InformativeText>
+    <Abstract>This characteristic aggregates the Percentage 8 characteristic and two instances of the Electric Current characteristic to represent a relative value in an electric current range.</Abstract>
+  </InformativeText>
+  <Value>
+    <Field name="Relative Runtime Value">
+      <Reference>org.bluetooth.characteristic.percentage_8</Reference>
+    </Field>
+    <Field name="Minimum Current">
+      <Reference>org.bluetooth.characteristic.electric_current</Reference>
+    </Field>
+    <Field name="Maximum Current">
+      <Reference>org.bluetooth.characteristic.electric_current</Reference>
+    </Field>
+  </Value>
+</Characteristic>

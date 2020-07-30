@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--Copyright 2017 Bluetooth SIG, Inc. All rights reserved.-->
+<Characteristic xsi:noNamespaceSchemaLocation="http://schemas.bluetooth.org/Documents/characteristic.xsd" name="Power" type="org.bluetooth.characteristic.power" uuid="2B05" last-modified="2017-07-11" approved="Yes" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <InformativeText>
+    <Abstract>The Power characteristic is used to represent a measure of power in units of watts.</Abstract>
+  </InformativeText>
+  <Value>
+    <Field name="Power">
+      <InformativeText>Unit is watt with a resolution of 0.1.</InformativeText>
+      <Format>uint24</Format>
+      <Unit>org.bluetooth.unit.power.watt</Unit>
+      <Minimum>0</Minimum>
+      <Maximum>1677721.4</Maximum>
+      <DecimalExponent>-1</DecimalExponent>
+      <BinaryExponent>0</BinaryExponent>
+      <Multipler>1</Multipler>
+      <Description>A value of 0xFFFFFF represents 'value is not known'.
+All other values are Prohibited.</Description>
+    </Field>
+  </Value>
+</Characteristic>

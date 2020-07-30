@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--Copyright 2017 Bluetooth SIG, Inc. All rights reserved.-->
+<Characteristic xsi:noNamespaceSchemaLocation="http://schemas.bluetooth.org/Documents/characteristic.xsd" name="Chromaticity Coordinates" type="org.bluetooth.characteristic.chromaticity_coordinates" uuid="2AE4" last-modified="2017-07-11" approved="Yes" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <InformativeText>
+    <Abstract>This characteristic represents a chromaticity coordinate as a tuple with an x and y coordinate.</Abstract>
+  </InformativeText>
+  <Value>
+    <Field name="Chromaticity x-coordinate">
+      <Reference>org.bluetooth.characteristic.chromaticity_coordinate</Reference>
+    </Field>
+    <Field name="Chromaticity y-coordinate">
+      <Reference>org.bluetooth.characteristic.chromaticity_coordinate</Reference>
+    </Field>
+  </Value>
+</Characteristic>

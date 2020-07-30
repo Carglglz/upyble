@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--Copyright 2017 Bluetooth SIG, Inc. All rights reserved.-->
+<Characteristic xsi:noNamespaceSchemaLocation="http://schemas.bluetooth.org/Documents/characteristic.xsd" name="Voltage" type="org.bluetooth.characteristic.voltage" uuid="2B18" last-modified="2017-07-11" approved="Yes" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <InformativeText>
+    <Abstract>The Voltage characteristic is used to represent a measure of positive electric potential difference in units of volts.</Abstract>
+  </InformativeText>
+  <Value>
+    <Field name="Voltage Value">
+      <InformativeText>Unit is volt with a resolution of 1/64V.</InformativeText>
+      <Format>uint16</Format>
+      <Unit>org.bluetooth.unit.electric_potential_difference.volt</Unit>
+      <Minimum>0.0</Minimum>
+      <Maximum>1022.0</Maximum>
+      <DecimalExponent>0</DecimalExponent>
+      <BinaryExponent>-6</BinaryExponent>
+      <Multipler>1</Multipler>
+      <Description>A value of 0xFFFF represents 'value is not known'. The minimum representable value represents the minimum value or lower, the maximum representable value represents the maximum value or higher.</Description>
+    </Field>
+  </Value>
+</Characteristic>

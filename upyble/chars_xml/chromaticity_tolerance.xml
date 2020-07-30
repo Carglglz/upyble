@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--Copyright 2017 Bluetooth SIG, Inc. All rights reserved.-->
+<Characteristic xsi:noNamespaceSchemaLocation="http://schemas.bluetooth.org/Documents/characteristic.xsd" name="Chromaticity Tolerance" type="org.bluetooth.characteristic.chromaticity_tolerance" uuid="2AE6" last-modified="2017-07-11" approved="Yes" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <InformativeText>
+    <Abstract>The Chromaticity Tolerance characteristic is a tolerance of a tuple of chromaticity values represented as a value of a radius of a circle in the CIE 1976 (u',v') diagram; value corresponding to the 3-sigma values of the expected chromaticity deviations.</Abstract>
+  </InformativeText>
+  <Value>
+    <Field name="Chromaticity Tolerance">
+      <InformativeText>Unit is unitless with a resolution of 0.0001</InformativeText>
+      <Format>uint8</Format>
+      <Minimum>0</Minimum>
+      <Maximum>0.0255</Maximum>
+      <DecimalExponent>-4</DecimalExponent>
+      <BinaryExponent>0</BinaryExponent>
+      <Multipler>1</Multipler>
+    </Field>
+  </Value>
+</Characteristic>

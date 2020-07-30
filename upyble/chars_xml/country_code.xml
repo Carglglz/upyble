@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--Copyright 2017 Bluetooth SIG, Inc. All rights reserved.-->
+<Characteristic xsi:noNamespaceSchemaLocation="http://schemas.bluetooth.org/Documents/characteristic.xsd" name="Country Code" type="org.bluetooth.characteristic.country_code" uuid="2AEC" last-modified="2017-07-11" approved="Yes" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <InformativeText>
+    <Abstract>
+This characteristic represents a country or dependent areas in accordance with the ISO 3166-1 Numeric standard.</Abstract>
+  </InformativeText>
+  <Value>
+    <Field name="Country Code">
+      <InformativeText>Unit is unitless with a resolution of 1.</InformativeText>
+      <Format>uint16</Format>
+      <Minimum>0</Minimum>
+      <Maximum>4095</Maximum>
+      <DecimalExponent>0</DecimalExponent>
+      <BinaryExponent>0</BinaryExponent>
+      <Multipler>1</Multipler>
+      <Description>A value of 0xFFFF represents 'value is not known'.</Description>
+    </Field>
+  </Value>
+</Characteristic>

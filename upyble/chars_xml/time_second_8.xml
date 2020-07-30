@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--Copyright 2017 Bluetooth SIG, Inc. All rights reserved.-->
+<Characteristic xsi:noNamespaceSchemaLocation="http://schemas.bluetooth.org/Documents/characteristic.xsd" name="Time Second 8" type="org.bluetooth.characteristic.time_second_8" uuid="2B17" last-modified="2017-07-11" approved="Yes" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <InformativeText>
+    <Abstract>The Time Second 8 characteristic is used to represent a period of time with a unit of 1 second.</Abstract>
+  </InformativeText>
+  <Value>
+    <Field name="Time Second 8">
+      <InformativeText>Unit is second with a resolution of 1.</InformativeText>
+      <Format>uint8</Format>
+      <Unit>org.bluetooth.unit.time.second</Unit>
+      <Minimum>0</Minimum>
+      <Maximum>254</Maximum>
+      <Description>A value of 0xFF represents 'value is not known'.</Description>
+    </Field>
+  </Value>
+</Characteristic>

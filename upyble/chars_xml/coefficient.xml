@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--Copyright 2017 Bluetooth SIG, Inc. All rights reserved.-->
+<Characteristic xsi:noNamespaceSchemaLocation="http://schemas.bluetooth.org/Documents/characteristic.xsd" name="Coefficient" type="org.bluetooth.characteristic.coefficient" uuid="2AE8" last-modified="2017-07-11" approved="Yes" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <InformativeText>
+    <Abstract>
+The Coefficient characteristic is used to represent a general coefficient value.</Abstract>
+  </InformativeText>
+  <Value>
+    <Field name="Coefficient">
+      <InformativeText>Unit is unitless.</InformativeText>
+      <Format>float32</Format>
+    </Field>
+  </Value>
+</Characteristic>

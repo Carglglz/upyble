@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--Copyright 2017 Bluetooth SIG, Inc. All rights reserved.-->
+<Characteristic xsi:noNamespaceSchemaLocation="http://schemas.bluetooth.org/Documents/characteristic.xsd" name="Fixed String 16" type="org.bluetooth.characteristic.fixed_string_16" uuid="2AF5" last-modified="2017-07-11" approved="Yes" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <InformativeText>
+    <Abstract>
+The Fixed String 16 characteristic represents a 16-octet UTF-8 string.</Abstract>
+  </InformativeText>
+  <Value>
+    <Field name="Fixed String">
+      <InformativeText>UTF-8 string</InformativeText>
+      <Format>utf8s</Format>
+    </Field>
+  </Value>
+</Characteristic>

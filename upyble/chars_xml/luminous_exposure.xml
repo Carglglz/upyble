@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--Copyright 2017 Bluetooth SIG, Inc. All rights reserved.-->
+<Characteristic xsi:noNamespaceSchemaLocation="http://schemas.bluetooth.org/Documents/characteristic.xsd" name="Luminous Exposure" type="org.bluetooth.characteristic.luminous_exposure" uuid="2AFE" last-modified="2017-07-11" approved="Yes" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <InformativeText>
+    <Abstract>The Luminous Exposure characteristic is used to represent a measure of luminous exposure in units of lux-hour.</Abstract>
+  </InformativeText>
+  <Value>
+    <Field name="Luminous Exposure">
+      <InformativeText>Unit is lux hour with a resolution of 1000.</InformativeText>
+      <Format>uint24</Format>
+      <Unit>org.bluetooth.unit.luminous_exposure.lux_hour</Unit>
+      <Minimum>0</Minimum>
+      <Maximum>16777214000</Maximum>
+      <DecimalExponent>3</DecimalExponent>
+      <BinaryExponent>0</BinaryExponent>
+      <Multipler>1</Multipler>
+      <Description>A value of 0xFFFFFF represents 'value is not known'.
+All other values are Prohibited.</Description>
+    </Field>
+  </Value>
+</Characteristic>

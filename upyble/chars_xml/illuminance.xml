@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--Copyright 2017 Bluetooth SIG, Inc. All rights reserved.-->
+<Characteristic xsi:noNamespaceSchemaLocation="http://schemas.bluetooth.org/Documents/characteristic.xsd" name="Illuminance" type="org.bluetooth.characteristic.illuminance" uuid="2AFB" last-modified="2017-07-11" approved="Yes" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <InformativeText>
+    <Abstract>The Illuminance characteristic is used to represent a measure of illuminance in units of lux.</Abstract>
+  </InformativeText>
+  <Value>
+    <Field name="Illuminance">
+      <InformativeText>Unit is lux with a resolution of 0.01.</InformativeText>
+      <Format>uint24</Format>
+      <Unit>org.bluetooth.unit.lux</Unit>
+      <Minimum>0</Minimum>
+      <Maximum>167772.14</Maximum>
+      <DecimalExponent>-2</DecimalExponent>
+      <BinaryExponent>0</BinaryExponent>
+      <Multipler>1</Multipler>
+      <Description>A value of 0xFFFFFF represents 'value is not known'.
+All other values are Prohibited.</Description>
+    </Field>
+  </Value>
+</Characteristic>

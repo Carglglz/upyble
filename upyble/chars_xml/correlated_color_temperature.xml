@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--Copyright 2017 Bluetooth SIG, Inc. All rights reserved.-->
+<Characteristic xsi:noNamespaceSchemaLocation="http://schemas.bluetooth.org/Documents/characteristic.xsd" name="Correlated Color Temperature" type="org.bluetooth.characteristic.correlated_color_temperature" uuid="2AE9" last-modified="2017-07-11" approved="Yes" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <InformativeText>
+    <Abstract>
+The Correlated Color Temperature characteristic is used to represent correlated color temperature in a range from 800 to 65534 Kelvin with a resolution of 1 Kelvin.</Abstract>
+  </InformativeText>
+  <Value>
+    <Field name="Correlated Color Temperature">
+      <InformativeText>Unit is Kelvin with a resolution of 1.</InformativeText>
+      <Format>uint16</Format>
+      <Unit>org.bluetooth.unit.thermodynamic_temperature.kelvin</Unit>
+      <Minimum>800</Minimum>
+      <Maximum>65534</Maximum>
+      <Description>A value of 0xFFFF represents 'value is not known'.</Description>
+    </Field>
+  </Value>
+</Characteristic>

@@ -34,6 +34,7 @@ DATA_FMT = {"sint8": 'b',
             "boolean": '?',
             "32bit": 'I',
             "FLOAT": 'f',
+            "float32": 'f',
             "24bit": 'I',
             "SFLOAT": 'f',
             "sint24": 'I',
@@ -42,6 +43,7 @@ DATA_FMT = {"sint8": 'b',
             "uint128": '2Q',
             "uint12": 'H',
             "4bit": 'B',
-            "characteristic": 'X'
+            "characteristic": 'X',
+            "struct": 'X'
 
             }

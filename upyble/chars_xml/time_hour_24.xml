@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--Copyright 2017 Bluetooth SIG, Inc. All rights reserved.-->
+<Characteristic xsi:noNamespaceSchemaLocation="http://schemas.bluetooth.org/Documents/characteristic.xsd" name="Time Hour 24" type="org.bluetooth.characteristic.time_hour_24" uuid="2B14" last-modified="2017-07-11" approved="Yes" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <InformativeText>
+    <Abstract>The Time Hour 24 characteristic is used to represent a period of time in hours.</Abstract>
+  </InformativeText>
+  <Value>
+    <Field name="Time Hour 24">
+      <InformativeText>Unit is hour with a resolution of 1.</InformativeText>
+      <Format>uint24</Format>
+      <Unit>org.bluetooth.unit.time.hour</Unit>
+      <Minimum>0</Minimum>
+      <Maximum>16777214</Maximum>
+      <Description>A value of 0xFFFFFF represents 'value is not known'.</Description>
+    </Field>
+  </Value>
+</Characteristic>

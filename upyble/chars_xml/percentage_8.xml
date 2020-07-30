@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--Copyright 2017 Bluetooth SIG, Inc. All rights reserved.-->
+<Characteristic xsi:noNamespaceSchemaLocation="http://schemas.bluetooth.org/Documents/characteristic.xsd" name="Percentage 8" type="org.bluetooth.characteristic.percentage_8" uuid="2B04" last-modified="2017-07-11" approved="Yes" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <InformativeText>
+    <Abstract>
+The Percentage 8 characteristic is used to represent a measure of percentage.</Abstract>
+  </InformativeText>
+  <Value>
+    <Field name="Percentage 8">
+      <InformativeText>Unit is a percentage with a resolution of 0.5.</InformativeText>
+      <Format>uint8</Format>
+      <Unit>org.bluetooth.unit.percentage</Unit>
+      <Minimum>0</Minimum>
+      <Maximum>100</Maximum>
+      <DecimalExponent>0</DecimalExponent>
+      <BinaryExponent>-1</BinaryExponent>
+      <Multipler>1</Multipler>
+      <Description>A value of 0xFF represents 'value is not known'.
+All other values are Prohibited.</Description>
+    </Field>
+  </Value>
+</Characteristic>

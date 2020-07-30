@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--Copyright 2017 Bluetooth SIG, Inc. All rights reserved.-->
+<Characteristic xsi:noNamespaceSchemaLocation="http://schemas.bluetooth.org/Documents/characteristic.xsd" name="Fixed String 36" type="org.bluetooth.characteristic.fixed_string_36" uuid="2AF7" last-modified="2017-07-11" approved="Yes" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <InformativeText>
+    <Abstract>
+The Fixed String 36 characteristic represents a 36-octet UTF-8 string.</Abstract>
+  </InformativeText>
+  <Value>
+    <Field name="Fixed String">
+      <InformativeText>UTF-8 string</InformativeText>
+      <Format>utf8s</Format>
+    </Field>
+  </Value>
+</Characteristic>

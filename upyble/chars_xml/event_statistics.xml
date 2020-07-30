@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--Copyright 2017 Bluetooth SIG, Inc. All rights reserved.-->
+<Characteristic xsi:noNamespaceSchemaLocation="http://schemas.bluetooth.org/Documents/characteristic.xsd" name="Event Statistics" type="org.bluetooth.characteristic.event_statistics" uuid="2AF4" last-modified="2017-07-11" approved="Yes" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <InformativeText>
+    <Abstract>This characteristic aggregates the Count 16 characteristic, two instances of the Time Decihour 8 characteristic and an instance of the Sensing Duration characteristic, to represent statistical values of events.</Abstract>
+  </InformativeText>
+  <Value>
+    <Field name="Number Of Events">
+      <Reference>org.bluetooth.characteristic.count_16</Reference>
+    </Field>
+    <Field name="Average Event Duration">
+      <Reference>org.bluetooth.characteristic.time_second_16</Reference>
+    </Field>
+    <Field name="Time Elapsed Since Last Event">
+      <Reference>org.bluetooth.characteristic.time_exponential_8</Reference>
+    </Field>
+    <Field name="Sensing Duration">
+      <Reference>org.bluetooth.characteristic.time_exponential_8</Reference>
+    </Field>
+  </Value>
+</Characteristic>

@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--Copyright 2017 Bluetooth SIG, Inc. All rights reserved.-->
+<Characteristic xsi:noNamespaceSchemaLocation="http://schemas.bluetooth.org/Documents/characteristic.xsd" name="Chromaticity In CCT And Duv Values" type="org.bluetooth.characteristic.chromaticity_in_cct_and_duv_values" uuid="2AE5" last-modified="2017-07-11" approved="Yes" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <InformativeText>
+    <Abstract>The Chromaticity In CCT And Duv Values characteristic is a composite characteristic consisting of the Correlated Color Temperature characteristic and the Chromatic Distance From Planckian characteristic.</Abstract>
+  </InformativeText>
+  <Value>
+    <Field name="Correlated Color Temperature">
+      <Reference>org.bluetooth.characteristic.correlated_color_temperature</Reference>
+    </Field>
+    <Field name="Chromaticity Distance From Planckian">
+      <Reference>org.bluetooth.characteristic.chromatic_distance_from_planckian</Reference>
+    </Field>
+  </Value>
+</Characteristic>

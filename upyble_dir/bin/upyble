@@ -15,6 +15,7 @@ import traceback
 import subprocess
 import argcomplete
 import textwrap
+import struct
 from argcomplete.completers import ChoicesCompleter
 from upyble.upybledevice import ble_scan, BASE_BLE_DEVICE, BLE_DEVICE
 from upyble.chars import ble_char_dict, ble_char_dict_rev
@@ -52,6 +53,7 @@ helparg = '''
 - sconf:    to scan and configure a device that matches a name -d [NAME]
 - config:   to configure a device use -t to indicate UUID of the device
 - get_services: to get services of a device (see -r and -mdata)
+- write: to write to a characteristic with write attribute (see -c)
 - get_stag: to get service tag from a service code, use -scode to indicate the code
 - get_scode: to get service code from a service tag, use -stag to indicate the tag
 - get_ctag: to get characteristic tag from characteristic code, use -ccode to indicate the code
@@ -62,7 +64,7 @@ helparg = '''
 - get_mcode: to get manufacturer code from a manufacturer tag, use -mtag to indicate the tag
 - cmdata: to get characteristic metadata (name, type, uuid, unit, format, notes...), see -c and -xml
 - cmdata_t: get_cmdata in table format.
-- dmdata : to get descriptor metadata (Name, uuid, format) (see -desc option)
+- dmdata: to get descriptor metadata (Name, uuid, format) (see -desc option)
 - follow:   to read from a service (see -s, -c, -tm), autodetects format and unit from characteristic metadata
 - rfollow: to read from a service (see -s, -c, -tm, -u, -fmt, -x)
 - see: To get specific info about a devices group use -G option as "see -G [GROUP NAME]"
@@ -88,12 +90,15 @@ it assumes it is a 'raw' upy command to send to the upy device
 """
 help_dv = "To point the command to a specific device saved in the global group"
 # UPY MODE KEYWORDS AND COMMANDS
-# TODO: WRITE TO SERVICE
+# TODO: WRITE TO CHARACTERISTIC
+# TODO: SERVICE METADATA PARSING
+# TODO: GATT PROFILES
 keywords_mode = ['config', 'scan', 'tscan', 'sconf', 'get_services',
                  'brepl', 'ble', 'make_group', 'mg_group', 'see', 'check',
                  'follow', 'get_stag', 'get_scode', 'get_ctag',
                  'get_ccode', 'get_aptag', 'get_apcode', 'rfollow',
-                 'get_mcode', 'get_mtag', 'cmdata', 'dmdata']
+                 'get_mcode', 'get_mtag', 'cmdata', 'dmdata',
+                 'write']
 
 parser = argparse.ArgumentParser(prog='upyble',
                                  description='Command line tool for Bluetooth Low Energy MicroPython devices',
@@ -1298,3 +1303,50 @@ elif args.m == 'rfollow':
                     break
         bdev.disconnect()
         sys.exit()
+
+# WRITE TO CHARACTERISTIC
+elif args.m == 'write':
+    print('Writing to characteristic: {}'.format(args.c[0]))
+    n = 0
+    while n < args.n:
+        bdev = BLE_DEVICE(args.t, init=True)
+        if bdev.connected:
+            break
+        else:
+            n += 1
+    if not bdev.connected:
+        print('Device not reachable try again.')
+        sys.exit()
+    else:
+        bdev.get_services()
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setLevel(logging.INFO)
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(asctime)s [%(name)s] %(message)s",
+            handlers=[handler])
+        if bdev.name is not None:
+            log = logging.getLogger('upyble@{}'.format(bdev.name))
+        else:
+            log = logging.getLogger('upyble')
+
+        # SERVICES AND CHARACTERISTICS Availability
+        servs_keys = list(bdev.services_rsum.keys())
+        writeables = list(bdev.writeables.keys())
+        if args.c[0] not in writeables:
+            print('Characteristic not available in {}'.format(bdev.name))
+        else:
+            char = get_XML_CHAR(writeables[0])
+            if 'Enumerations' in char.fields[char.name].keys():
+                print('{} options:'.format(char.name))
+                for k, v in char.fields[char.name]['Enumerations'].items():
+                    print(f'\t - {v}: {k}')
+                val = int(input('{}: '.format(char.name)))
+                format = char.fields[char.name]['Ctype']
+                packed_val = struct.pack(format, val)
+                bdev.write_char(char.name, data=packed_val)
+                time.sleep(2)
+                bdev.disconnect()
+                sys.exit()
+            else:
+                pass

@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--Copyright 2017 Bluetooth SIG, Inc. All rights reserved.-->
+<Characteristic xsi:noNamespaceSchemaLocation="http://schemas.bluetooth.org/Documents/characteristic.xsd" name="Chromatic Distance From Planckian" type="org.bluetooth.characteristic.chromatic_distance_from_planckian" uuid="2AE3" last-modified="2017-07-11" approved="Yes" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <InformativeText>
+    <Abstract>The Chromatic Distance From Planckian characteristic represents a distance of a chromaticity coordinate from the Planckian locus in the (u',2/3 v') diagram as defined by ANSI standard C78.377-2008.
+The distance is positive if the chromaticity coordinate is located above the Planckian locus (i.e. has as higher y value than the Planckian), and negative if it is located below.
+The distance is only valid within the range from -0.05 to 0.05.</Abstract>
+  </InformativeText>
+  <Value>
+    <Field name="Distance From Planckian">
+      <InformativeText>Unit is unitless with a resolution of 0.00001.</InformativeText>
+      <Format>sint16</Format>
+      <Minimum>-0.05</Minimum>
+      <Maximum>0.05</Maximum>
+      <DecimalExponent>-5</DecimalExponent>
+      <BinaryExponent>0</BinaryExponent>
+      <Multipler>1</Multipler>
+      <Description>A value of 0xFFFF represents 'value is not known'. A value of 0xFFFE represents 'value is not valid'.</Description>
+    </Field>
+  </Value>
+</Characteristic>

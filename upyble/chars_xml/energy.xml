@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--Copyright 2017 Bluetooth SIG, Inc. All rights reserved.-->
+<Characteristic xsi:noNamespaceSchemaLocation="http://schemas.bluetooth.org/Documents/characteristic.xsd" name="Energy" type="org.bluetooth.characteristic.energy" uuid="2AF2" last-modified="2017-07-11" approved="Yes" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <InformativeText>
+    <Abstract>
+The Energy characteristic is used to represent a measure of energy in units of kilowatt hours.</Abstract>
+  </InformativeText>
+  <Value>
+    <Field name="Energy">
+      <InformativeText>Unit is kilowatt-hour with a resolution of 1.</InformativeText>
+      <Format>uint24</Format>
+      <Unit>org.bluetooth.unit.kilowatt_hour</Unit>
+      <Minimum>0</Minimum>
+      <Maximum>16777214</Maximum>
+      <DecimalExponent>0</DecimalExponent>
+      <BinaryExponent>0</BinaryExponent>
+      <Multipler>1</Multipler>
+      <Description>A value of 0xFFFFFF represents ‘value is not known’.</Description>
+    </Field>
+  </Value>
+</Characteristic>

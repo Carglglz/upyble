@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--Copyright 2017 Bluetooth SIG, Inc. All rights reserved.-->
+<Characteristic xsi:noNamespaceSchemaLocation="http://schemas.bluetooth.org/Documents/characteristic.xsd" name="Perceived Lightness" type="org.bluetooth.characteristic.perceived_lightness" uuid="2B03" last-modified="2017-07-11" approved="Yes" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <InformativeText>
+    <Abstract>
+The Perceived Lightness characteristic is used to represent the perceived lightness of a light.</Abstract>
+  </InformativeText>
+  <Value>
+    <Field name="Perceived Lightness">
+      <InformativeText>Unit is unitless with a resolution of 1.</InformativeText>
+      <Format>uint16</Format>
+      <Minimum>0</Minimum>
+      <Maximum>65535</Maximum>
+      <DecimalExponent>0</DecimalExponent>
+      <BinaryExponent>0</BinaryExponent>
+      <Multipler>1</Multipler>
+    </Field>
+  </Value>
+</Characteristic>

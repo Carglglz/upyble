@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--Copyright 2017 Bluetooth SIG, Inc. All rights reserved.-->
+<Characteristic xsi:noNamespaceSchemaLocation="http://schemas.bluetooth.org/Documents/characteristic.xsd" name="Relative Value In A Period of Day" type="org.bluetooth.characteristic.relative_value_in_a_period_of_day" uuid="2B0B" last-modified="2017-07-11" approved="Yes" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <InformativeText>
+    <Abstract>This characteristic aggregates the Percentage 8 characteristic, and two instances of the Time Decihour 8 characteristic.</Abstract>
+  </InformativeText>
+  <Value>
+    <Field name="Relative Value">
+      <Reference>org.bluetooth.characteristic.percentage_8</Reference>
+    </Field>
+    <Field name="Start Time">
+      <Reference>org.bluetooth.characteristic.time_decihour_8</Reference>
+    </Field>
+    <Field name="End Time">
+      <Reference>org.bluetooth.characteristic.time_decihour_8</Reference>
+    </Field>
+  </Value>
+</Characteristic>

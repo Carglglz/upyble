@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--Copyright 2017 Bluetooth SIG, Inc. All rights reserved.-->
+<Characteristic xsi:noNamespaceSchemaLocation="http://schemas.bluetooth.org/Documents/characteristic.xsd" name="Time Exponential 8" type="org.bluetooth.characteristic.time_exponential_8" uuid="2B13" last-modified="2017-07-11" approved="Yes" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <InformativeText>
+    <Abstract>The Time Exponential 8 characteristic is used to represent a measure of period of time in seconds.</Abstract>
+  </InformativeText>
+  <Value>
+    <Field name="Time Exponential 8">
+      <InformativeText>The time duration is given by the value 1.1^(N-64) in seconds, with N being the raw 8-bit value.</InformativeText>
+      <Format>uint8</Format>
+      <Unit>org.bluetooth.unit.time.second</Unit>
+      <Minimum>0.0</Minimum>
+      <Maximum>73216705</Maximum>
+      <Description>A raw value of 0x00 represents 0 seconds, and a raw value of 0xFF represents the total life of the device.</Description>
+    </Field>
+  </Value>
+</Characteristic>

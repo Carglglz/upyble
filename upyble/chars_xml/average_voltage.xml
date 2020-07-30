@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--Copyright 2017 Bluetooth SIG, Inc. All rights reserved.-->
+<Characteristic xsi:noNamespaceSchemaLocation="http://schemas.bluetooth.org/Documents/characteristic.xsd" name="Average Voltage" type="org.bluetooth.characteristic.average_voltage" uuid="2AE1" last-modified="2017-07-11" approved="Yes" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <InformativeText>
+    <Abstract>
+This characteristic aggregates the Voltage characteristic and instance of the Time Exponential 8 characateristic.</Abstract>
+  </InformativeText>
+  <Value>
+    <Field name="Voltage Value">
+      <Reference>org.bluetooth.characteristic.voltage</Reference>
+    </Field>
+    <Field name="Sensing Duration">
+      <Reference>org.bluetooth.characteristic.time_exponential_8</Reference>
+    </Field>
+  </Value>
+</Characteristic>

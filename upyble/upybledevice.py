@@ -422,10 +422,10 @@ class BASE_BLE_DEVICE:
                         try:
                             self.readables[ble_char_dict[char.uuid]] = char.uuid
                         except Exception:
-                            self.readables[service.description] = char.uuid
+                            self.readables[char.description] = char.uuid
                     if "write" in char.properties:
                         try:
-                            self.writeables[service.description] = char.uuid
+                            self.writeables[char.description] = char.uuid
                         except Exception as e:
                             self.writeables[ble_char_dict[char.uuid]] = char.uuid
                     try:
@@ -543,6 +543,24 @@ class BASE_BLE_DEVICE:
 
     async def as_write_char(self, uuid, data):
         await self.ble_client.write_gatt_char(uuid, data)
+
+    def write_char(self, key=None, uuid=None, data=None):
+        if key is not None:
+            if key in list(self.writeables.keys()):
+                data = self.loop.run_until_complete(
+                    self.as_write_char(self.writeables[key], data))  # make fmt_data
+                return data
+            else:
+                print('Characteristic not writeable')
+
+        else:
+            if uuid is not None:
+                if uuid in list(self.writeables.values()):
+                    data = self.loop.run_until_complete(
+                        self.as_write_char(uuid, data))  # make fmt_data
+                    return data
+                else:
+                    print('Characteristic not writeable')
 
     def write_char_raw(self, key=None, uuid=None, data=None):
         if key is not None:

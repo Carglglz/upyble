@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--Copyright 2017 Bluetooth SIG, Inc. All rights reserved.-->
+<Characteristic xsi:noNamespaceSchemaLocation="http://schemas.bluetooth.org/Documents/characteristic.xsd" name="Power Specification" type="org.bluetooth.characteristic.power_specification" uuid="2B06" last-modified="2017-07-11" approved="Yes" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <InformativeText>
+    <Abstract>This characteristic aggregates three instances of the Power characteristic to represent a specification of Power values.</Abstract>
+  </InformativeText>
+  <Value>
+    <Field name="Minimum Power Value">
+      <Reference>org.bluetooth.characteristic.power</Reference>
+    </Field>
+    <Field name="Typical Power Value">
+      <Reference>org.bluetooth.characteristic.power</Reference>
+    </Field>
+    <Field name="Maximum Power Value">
+      <Reference>org.bluetooth.characteristic.power</Reference>
+    </Field>
+  </Value>
+</Characteristic>

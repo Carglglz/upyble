@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--Copyright 2017 Bluetooth SIG, Inc. All rights reserved.-->
+<Characteristic xsi:noNamespaceSchemaLocation="http://schemas.bluetooth.org/Documents/characteristic.xsd" name="Boolean" type="org.bluetooth.characteristic.boolean" uuid="2AE2" last-modified="2017-07-11" approved="Yes" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <InformativeText>
+    <Abstract>The Boolean characteristic defines the predefined Boolean values as an enumeration.</Abstract>
+  </InformativeText>
+  <Value>
+    <Field name="Boolean">
+      <Format>uint8</Format>
+      <Enumerations>
+        <Enumeration key="0" value="False" />
+        <Enumeration key="1" value="True" />
+        <Enumeration key="2 to 255" value="Prohibited" />
+      </Enumerations>
+    </Field>
+  </Value>
+</Characteristic>

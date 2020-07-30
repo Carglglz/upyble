@@ -21,3 +21,4 @@ _BLE*
 /upyble/*.ipynb
 /upyble/*.txt
 /upyble/*.ipynb_checkpoints
+/upybleutils/main.py

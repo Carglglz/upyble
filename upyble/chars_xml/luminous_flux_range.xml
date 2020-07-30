@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--Copyright 2017 Bluetooth SIG, Inc. All rights reserved.-->
+<Characteristic xsi:noNamespaceSchemaLocation="http://schemas.bluetooth.org/Documents/characteristic.xsd" name="Luminous Flux Range" type="org.bluetooth.characteristic.luminous_flux_range" uuid="2B00" last-modified="2017-07-11" approved="Yes" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <InformativeText>
+    <Abstract>This characteristic aggregates two instances of the Luminous Flux characteristic to represent a luminous flux range.</Abstract>
+  </InformativeText>
+  <Value>
+    <Field name="Minimum Luminous Flux">
+      <Reference>org.bluetooth.characteristic.luminous_flux</Reference>
+    </Field>
+    <Field name="Maximum Luminous Flux">
+      <Reference>org.bluetooth.characteristic.luminous_flux</Reference>
+    </Field>
+  </Value>
+</Characteristic>

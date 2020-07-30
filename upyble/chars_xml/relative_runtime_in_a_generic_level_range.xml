@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--Copyright 2017 Bluetooth SIG, Inc. All rights reserved.-->
+<Characteristic xsi:noNamespaceSchemaLocation="http://schemas.bluetooth.org/Documents/characteristic.xsd" name="Relative Runtime In A Generic Level Range" type="org.bluetooth.characteristic.relative_runtime_in_a_generic_level_range" uuid="2B08" last-modified="2017-07-11" approved="Yes" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <InformativeText>
+    <Abstract>This characteristic aggregates the Percentage 8 characteristic and two instances of the Generic Level characteristic to represent a runtime in a generic level range.</Abstract>
+  </InformativeText>
+  <Value>
+    <Field name="Relative Value">
+      <Reference>org.bluetooth.characteristic.percentage_8</Reference>
+    </Field>
+    <Field name="Minimum Generic Level">
+      <Reference>org.bluetooth.characteristic.generic_level</Reference>
+    </Field>
+    <Field name="Maximum Generic Level">
+      <Reference>org.bluetooth.characteristic.generic_level</Reference>
+    </Field>
+  </Value>
+</Characteristic>

@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--Copyright 2017 Bluetooth SIG, Inc. All rights reserved.-->
+<Characteristic xsi:noNamespaceSchemaLocation="http://schemas.bluetooth.org/Documents/characteristic.xsd" name="Chromaticity Coordinate" type="org.bluetooth.characteristic.chromaticity_coordinate" uuid="2B1C" last-modified="2017-07-11" approved="Yes" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <InformativeText>
+    <Abstract>This characteristic represents a chromaticity coordinate in a color diagram such as the CIE1931 diagram. It can represent an x or y coordinate.</Abstract>
+  </InformativeText>
+  <Value>
+    <Field name="Chromaticity Coordinate">
+      <InformativeText>Unit is unitless with a resolution of 1/65535</InformativeText>
+      <Format>uint16</Format>
+      <Minimum>0</Minimum>
+      <Maximum>1.0</Maximum>
+      <DecimalExponent>-16</DecimalExponent>
+      <BinaryExponent>0</BinaryExponent>
+      <Multipler>1</Multipler>
+    </Field>
+  </Value>
+</Characteristic>

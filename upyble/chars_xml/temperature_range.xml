@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--Copyright 2017 Bluetooth SIG, Inc. All rights reserved.-->
+<Characteristic xsi:noNamespaceSchemaLocation="http://schemas.bluetooth.org/Documents/characteristic.xsd" name="Temperature Range" type="org.bluetooth.characteristic.temperature_range" uuid="2B10" last-modified="2017-07-11" approved="Yes" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <InformativeText>
+    <Abstract>This characteristic aggregates two instances of the Temperature characteristic to represent a temperature range.</Abstract>
+  </InformativeText>
+  <Value>
+    <Field name="Minimum Temperature">
+      <Reference>org.bluetooth.characteristic.temperature</Reference>
+    </Field>
+    <Field name="Maximum Temperature">
+      <Reference>org.bluetooth.characteristic.temperature</Reference>
+    </Field>
+  </Value>
+</Characteristic>

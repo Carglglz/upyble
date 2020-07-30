@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--Copyright 2017 Bluetooth SIG, Inc. All rights reserved.-->
+<Characteristic xsi:noNamespaceSchemaLocation="http://schemas.bluetooth.org/Documents/characteristic.xsd" name="CIE 13.3-1995 Color Rendering Index" type="org.bluetooth.characteristic.cie_13.3-1995_color_rendering_index" uuid="2AE7" last-modified="2017-07-11" approved="Yes" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <InformativeText>
+    <Abstract>The CIE 13.3-1995 Color Rendering Index characteristic is a color rendition index value for a color patch as calculated in accordance with the CIE 13.3-1995 standard.</Abstract>
+  </InformativeText>
+  <Value>
+    <Field name="Color Rendering Index">
+      <InformativeText>Unit is unitless with a resolution of 1.</InformativeText>
+      <Format>sint8</Format>
+      <Minimum>-128</Minimum>
+      <Maximum>100</Maximum>
+      <DecimalExponent>0</DecimalExponent>
+      <BinaryExponent>0</BinaryExponent>
+      <Multipler>1</Multipler>
+    </Field>
+  </Value>
+</Characteristic>
