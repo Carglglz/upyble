@@ -1,13 +1,13 @@
-# This example demonstrates a simple temperature sensor peripheral.
+# This example demonstrates a simple ADC (ADS1115) sensor peripheral.
 #
-# The sensor's local value updates every second, and it will notify
-# any connected central every 10 seconds.
-
+# The sensor's local value updates every second
 import bluetooth
 import struct
 from ble_advertising import advertising_payload
 from machine import Timer
 from micropython import const
+import os
+import sys
 from ads1115 import ADS1115
 from init_ADS import MY_ADS, i2c
 
@@ -16,29 +16,54 @@ _IRQ_CENTRAL_DISCONNECT = const(1 << 1)
 
 # org.bluetooth.service.enviromental_sensing
 _ENV_SERV_UUID = bluetooth.UUID(0x181A)
-# org.bluetooth.characteristic.analog
-_ANALOG_CHAR = (
-    bluetooth.UUID(0x2A58),
+# org.bluetooth.characteristic.voltage
+_VOLTAGE_CHAR = (
+    bluetooth.UUID(0x2B18),
     bluetooth.FLAG_READ | bluetooth.FLAG_NOTIFY,
 )
+# org.bluetooth.characteristic.voltage_specification
+# _VOLTAGE_SPECIFICATION_CHAR = (
+#     bluetooth.UUID(0x2B19),
+#     bluetooth.FLAG_READ,
+# )
 _ADS_SERV_SERVICE = (
     _ENV_SERV_UUID,
-    (_ANALOG_CHAR,),
+    (_VOLTAGE_CHAR,),
 )
 
 # org.bluetooth.service.device_information
 _DEV_INF_SERV_UUID = bluetooth.UUID(0x180A)
-# org.bluetooth.characteristic.analog
+# org.bluetooth.characteristic.appearance
 _APPEAR_CHAR = (
     bluetooth.UUID(0x2A01),
     bluetooth.FLAG_READ
 )
+# org.bluetooth.characteristic.manufacturer_name_string
+_MANUFACT_CHAR = (
+    bluetooth.UUID(0x2A29),
+    bluetooth.FLAG_READ
+)
+
+# org.bluetooth.characteristic.gap.appearance
+_ADV_APPEARANCE_HID_DIGITAL_PEN = const(967)
+
+systeminfo = os.uname()
+_MODEL_NUMBER = systeminfo.sysname
+_FIRMWARE_REV = "{}-{}".format(sys.implementation[0], systeminfo.release)
+
+_MODEL_NUMBER_CHAR = (
+        bluetooth.UUID(0x2A24),
+        bluetooth.FLAG_READ)
+
+_FIRMWARE_REV_CHAR = (
+        bluetooth.UUID(0x2A26),
+        bluetooth.FLAG_READ)
+
 _DEV_INF_SERV_SERVICE = (
     _DEV_INF_SERV_UUID,
-    (_APPEAR_CHAR,),
+    (_APPEAR_CHAR, _MANUFACT_CHAR,
+     _MODEL_NUMBER_CHAR, _FIRMWARE_REV_CHAR),
 )
-# org.bluetooth.characteristic.gap.appearance.xml
-_ADV_APPEARANCE_HID_DIGITAL_PEN = const(967)
 
 
 class BLE_ADS:
@@ -47,32 +72,46 @@ class BLE_ADS:
         self.init_ads()
         self.ads_timer = Timer(-1)
         self.irq_busy = False
+        self.min_volt = None
+        self.typ_volt = None
+        self.max_volt = None
         self.ads_dev.ads.conversion_start(7, channel1=self.ads_dev.channel)
         self.i = 0
-        self._ble = ble
+        self._ble = bluetooth.BLE()
         self._ble.active(True)
         self._ble.irq(handler=self._irq)
-        ((self._handle,), (self._appear,)) = self._ble.gatts_register_services(
-            (_ADS_SERV_SERVICE, _DEV_INF_SERV_SERVICE))
+        ((self._appear, self._manufact, self._model, self._firm), (self._volt_h,)) = self._ble.gatts_register_services(
+            (_DEV_INF_SERV_SERVICE, _ADS_SERV_SERVICE))
         self._connections = set()
         self._payload = advertising_payload(
             name=name, services=[
                 _ENV_SERV_UUID], appearance=_ADV_APPEARANCE_HID_DIGITAL_PEN
         )
-        self._advertise()
+        self._advertise(interval_us=30000)
         self._ble.gatts_write(self._appear, struct.pack(
             "h", _ADV_APPEARANCE_HID_DIGITAL_PEN))
+        self._ble.gatts_write(self._manufact, bytes('Espressif Incorporated',
+                                                    'utf8'))
+        self._ble.gatts_write(self._model, bytes(_MODEL_NUMBER, 'utf8'))
+        self._ble.gatts_write(self._firm, bytes(_FIRMWARE_REV, 'utf8'))
+        volt_sample = (self.ads_dev.ads.raw_to_v(
+            self.ads_dev.ads.alert_read()))
+        volt_bin = int(volt_sample / (2**(-6)))
+        self._ble.gatts_write(self._volt_h, struct.pack(
+            "H", volt_bin))
 
     def _irq(self, event, data):
         # Track connections so we can send notifications.
         if event == _IRQ_CENTRAL_CONNECT:
             conn_handle, _, _, = data
             self._connections.add(conn_handle)
+            self.start_volt_bg()
         elif event == _IRQ_CENTRAL_DISCONNECT:
             conn_handle, _, _, = data
             self._connections.remove(conn_handle)
+            self.stop_volt_bg()
             # Start advertising again to allow a new connection.
-            self._advertise()
+            self._advertise(interval_us=30000)
 
     def init_ads(self):
         self.ads_dev.ads = self.ads_dev.ads_lib(self.ads_dev.i2c,
@@ -92,12 +131,13 @@ class BLE_ADS:
         # Write the local value, ready for a central to read.
         volt_sample = (self.ads_dev.ads.raw_to_v(
             self.ads_dev.ads.alert_read()))
-        self._ble.gatts_write(self._handle, struct.pack(
-            "f", volt_sample))
-        if notify:
-            for conn_handle in self._connections:
-                # Notify connected centrals to issue a read.
-                self._ble.gatts_notify(conn_handle, self._handle)
+        volt_bin = int(volt_sample / (2**(-6)))
+        self._ble.gatts_write(self._volt_h, struct.pack(
+            "H", volt_bin))
+        # if notify:
+        #     for conn_handle in self._connections:
+        #         # Notify connected centrals to issue a read.
+        #         self._ble.gatts_notify(conn_handle, self._handle)
 
     def _advertise(self, interval_us=500000):
         self._ble.gap_advertise(interval_us, adv_data=self._payload)
@@ -123,9 +163,3 @@ class BLE_ADS:
     def stop_volt_bg(self):
         self.ads_timer.deinit()
         self.irq_busy = False
-
-
-ble = bluetooth.BLE()
-ble_ads = BLE_ADS(ble)
-ble_ads.start_volt_bg()
-print('BLE ADS Voltmeter ready!')

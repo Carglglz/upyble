@@ -17,7 +17,8 @@ import argcomplete
 import textwrap
 import struct
 from argcomplete.completers import ChoicesCompleter
-from upyble.upybledevice import ble_scan, BASE_BLE_DEVICE, BLE_DEVICE
+from upyble.upybledevice import (ble_scan, BASE_BLE_DEVICE, BLE_DEVICE,
+                                 dfufy_file, DFU_BLE_CONTROLLER)
 from upyble.chars import ble_char_dict, ble_char_dict_rev
 from upyble.servs import ble_services_dict, ble_services_dict_rev
 from upyble.appearances import ble_appearances_dict, ble_appearances_dict_rev
@@ -65,6 +66,8 @@ helparg = '''
 - cmdata: to get characteristic metadata (name, type, uuid, unit, format, notes...), see -c and -xml
 - cmdata_t: get_cmdata in table format.
 - dmdata: to get descriptor metadata (Name, uuid, format) (see -desc option)
+- dfu_freeze: "freeze" a script to be able to send it through BLE, ('myscript.py' --> 'myscript.bin') (see -f)
+- dfu: to send a '.bin' script through BLE, (this needs 'dfu_targe.py' and its BLE_DFU_TARGET instance running)
 - follow:   to read from a service (see -s, -c, -tm), autodetects format and unit from characteristic metadata
 - rfollow: to read from a service (see -s, -c, -tm, -u, -fmt, -x)
 - see: To get specific info about a devices group use -G option as "see -G [GROUP NAME]"
@@ -98,7 +101,7 @@ keywords_mode = ['config', 'scan', 'tscan', 'sconf', 'get_services',
                  'follow', 'get_stag', 'get_scode', 'get_ctag',
                  'get_ccode', 'get_aptag', 'get_apcode', 'rfollow',
                  'get_mcode', 'get_mtag', 'cmdata', 'dmdata',
-                 'write']
+                 'write', 'dfu_freeze', 'dfu']
 
 parser = argparse.ArgumentParser(prog='upyble',
                                  description='Command line tool for Bluetooth Low Energy MicroPython devices',
@@ -131,6 +134,8 @@ parser.add_argument('-mcode',  help='Manufacturer code; e.g "741"').completer = 
 parser.add_argument('-xml', help='To see metadata in original xml format', action='store_true')
 parser.add_argument('-r', help='To read characteristics with get_service mode', action='store_true')
 parser.add_argument('-mdata', help='To see characteristics metadata with get_service mode', action='store_true')
+parser.add_argument('-ps', type=int, default=20,
+                    help='packet size for dfu mode, default: 20 bytes')
 parser.add_argument(
     "-st", help='shows target uuid if using config file', required=False, default=False, action='store_true')
 parser.add_argument(
@@ -478,6 +483,12 @@ if args.G is not None:
         print('file not found, please create a group first')
         sys.exit()
 
+
+# DFU_FREEZE
+if args.m == 'dfu_freeze':
+    if args.f:
+        dfufy_file(args.f)
+    sys.exit()
 # GET_SERV_TAG
 if args.m == 'get_stag':
     if args.scode is not None:
@@ -1350,3 +1361,15 @@ elif args.m == 'write':
                 sys.exit()
             else:
                 pass
+
+elif args.m == 'dfu':
+    if args.t:
+        devdfu = DFU_BLE_CONTROLLER(args.t, init=True, packet_size=args.ps)
+        if devdfu.connected:
+            # ASSERT DFU MODE
+            assert 'Device Firmware Update Service' in devdfu.services_rsum, 'DFU Mode not available'
+            assert 'DFU Control Point' in devdfu.services_rsum['Device Firmware Update Service'], 'Missing DFU Control Point'
+            assert 'DFU Packet' in devdfu.services_rsum['Device Firmware Update Service'], 'Missing DFU Packet'
+            if args.f:
+                assert args.f.endswith('.bin'), 'Incorrect file format, use dfu_freeze to create the proper file'
+                devdfu.do_dfu(args.f)

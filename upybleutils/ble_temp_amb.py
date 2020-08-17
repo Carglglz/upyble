@@ -29,6 +29,7 @@ import sys
 
 _IRQ_CENTRAL_CONNECT = const(1 << 0)
 _IRQ_CENTRAL_DISCONNECT = const(1 << 1)
+_IRQ_GATTS_WRITE = const(1 << 2)
 
 # org.bluetooth.service.battery_service
 _BATT_SERV_UUID = bluetooth.UUID(0x180F)
@@ -59,9 +60,17 @@ _TEMP_CHAR = (
     bluetooth.FLAG_READ | bluetooth.FLAG_NOTIFY,
     # (_CHAR_USER_DESC,)
 )
+
+# org.bluetooth.characteristic.temperature
+_TEMP_RANGE_CHAR = (
+    bluetooth.UUID(0x2B10),
+    bluetooth.FLAG_READ | bluetooth.FLAG_WRITE,
+    # (_CHAR_USER_DESC,)
+)
+
 _TEMP_SERV_SERVICE = (
     _ENV_SERV_UUID,
-    (_TEMP_CHAR,),
+    (_TEMP_CHAR, _TEMP_RANGE_CHAR),
 )
 
 # org.bluetooth.service.device_information
@@ -116,6 +125,8 @@ class BLE_Battery_Temp:
         self._batt_charged = False
         self._batt_discharged = False
         self._is_connected = False
+        self.max_temp = 25
+        self.min_temp = 20
         bat_volt = round(((self.bat.read()*2)/4095)*3.6, 2)
         percentage = int(round((bat_volt - 3.3) / (4.23 - 3.3) * 100, 1))
         temp_volt = int(self.ads_dev.read_V() * (25/0.75)) * 100
@@ -128,8 +139,9 @@ class BLE_Battery_Temp:
             self.batt_pow_state = [3, 2, 3, 3]
         self._ble = ble
         self._ble.active(True)
+        self._ble.config(gap_name='ESP32-Temp')
         self._ble.irq(handler=self._irq)
-        ((self._appear, self._manufact, self._model, self._firm), (self._level_, self._powstate), (self._temp,)) = self._ble.gatts_register_services(
+        ((self._appear, self._manufact, self._model, self._firm), (self._level_, self._powstate), (self._temp, self._rangetemp)) = self._ble.gatts_register_services(
             (_DEV_INF_SERV_SERVICE, _BATT_SERV_SERVICE, _TEMP_SERV_SERVICE))
         self._connections = set()
         self._payload = advertising_payload(
@@ -146,6 +158,9 @@ class BLE_Battery_Temp:
         self._ble.gatts_write(self._powstate, self._mask_8bit(*self.batt_pow_state))
         self._ble.gatts_write(self._temp, struct.pack("h", int(temp_volt * 100)))
         self._ble.gatts_write(self._level_, struct.pack("B", percentage))
+        self._ble.gatts_write(self._rangetemp, struct.pack("hh",
+                                                           int(self.min_temp * 100),
+                                                           int(self.max_temp * 100)))
         # self._ble.gatts_write(self._char_userdesc, bytes('ESP32 CPU Temperature',
         #                                                  'utf8'))
         for i in range(5):
@@ -175,6 +190,12 @@ class BLE_Battery_Temp:
             # Start advertising again to allow a new connection.
             self._advertise()
             self.start_check_conn()
+        elif event == _IRQ_GATTS_WRITE:
+            conn_handle, value_handle, = data
+            if conn_handle in self._connections and value_handle == self._rangetemp:
+                min_temp, max_temp = struct.unpack('hh', self._ble.gatts_read(self._rangetemp))
+                self.min_temp = min_temp * (10**(-2))
+                self.max_temp = max_temp * (10**(-2))
 
     def read_batt_volt_and_temp(self, notify=False):
         # Data is sint16 in degrees Celsius with a resolution of 0.01 degrees Celsius.
@@ -214,6 +235,10 @@ class BLE_Battery_Temp:
             else:
                 self._batt_discharged = False
 
+            if (mamb_temp/100) > self.max_temp or (mamb_temp/100) < self.min_temp:
+                for conn_handle in self._connections:
+                    self._ble.gatts_notify(conn_handle, self._temp)
+
         self._ble.gatts_write(self._temp, struct.pack(
             "h", mamb_temp))
 
@@ -249,9 +274,10 @@ class BLE_Battery_Temp:
                 for k in range(4):
                     self.led.value(not self.led.value())
                     time.sleep(0.2)
+                print('No connections received, deepsleep for 60 s...')
                 deepsleep(60000)
 
-    def start_check_conn(self, timeout=30000):
+    def start_check_conn(self, timeout=120000):
         self.irq_busy = False
         self.bat_timer.init(period=timeout, mode=Timer.ONE_SHOT,
                             callback=self.check_if_connected)
@@ -264,12 +290,3 @@ class BLE_Battery_Temp:
     def stop_batt_bg(self):
         self.bat_timer.deinit()
         self.irq_busy = False
-
-
-ble = bluetooth.BLE()
-
-
-def set_ble_flag(flag):
-    with open('ble_flag.py', 'wb') as bleconfig:
-        bleconfig.write(b'BLE = {}'.format(flag))
-# ble_batt = BLE_Battery_Temp(ble)

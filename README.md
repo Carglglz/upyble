@@ -18,6 +18,7 @@
 * Custom commands to automate communication/control
 * Command line autocompletion
 * Terminal BLE SHELL-REPL 🔸🔺
+* Custom DFU Profile (`dfu_target.py` in profiles) and dfu commands to send scripts through BLE.
 
 
 
@@ -29,7 +30,7 @@
 
 ### Getting Started
 
-For Terminal BLE SHELL-REPL :
+To use Terminal BLE SHELL-REPL :
 
 First be sure that the **BLE REPL daemon is enabled** and running:
 
@@ -117,6 +118,8 @@ This means that if the first argument is not a Mode keyword it assumes it is a '
 - **`upyble see`**: to get specific info about a devices group use `-G` option as `see -G [GROUP NAME]`
 - **`upyble brepl`**: to enter the BLE SHELL-REPL
 - **`upyble ble@[DEVICE]`**: to access brepl in a 'ssh' style command if a device is stored in a global group called `UPYBLE_G` (this needs to be created first doing e.g. `$ upyble make_group -g -f UPYBLE_G -devs foo_device UUID`) The device can be accessed as `$ upyble ble@foo_device` or redirect any command as e.g. `$ upyble get_services -@foo_device`.
+- **`upyble make_group`**: to make a group of boards to send commands to. Use -f for the name  of the group and -devs option to indicate a name and uuid of each board. (To store the group settings globally use -g option)
+- **`upyble mg_group`**: to manage a group of boards to send commands to. Use -G for the name of the group and -add option to add devices (indicate a name and uuid of each board) or -rm to remove devices (indicated by name)
 
 ____
 
