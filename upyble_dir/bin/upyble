@@ -134,8 +134,11 @@ parser.add_argument('-mcode',  help='Manufacturer code; e.g "741"').completer = 
 parser.add_argument('-xml', help='To see metadata in original xml format', action='store_true')
 parser.add_argument('-r', help='To read characteristics with get_service mode', action='store_true')
 parser.add_argument('-mdata', help='To see characteristics metadata with get_service mode', action='store_true')
-parser.add_argument('-ps', type=int, default=20,
-                    help='packet size for dfu mode, default: 20 bytes')
+parser.add_argument('-ps', type=int, default=512,
+                    help='packet size for dfu mode, default: 512 bytes')
+parser.add_argument('-debug',
+                    help='debug information in dfu mode',
+                    action='store_true')
 parser.add_argument(
     "-st", help='shows target uuid if using config file', required=False, default=False, action='store_true')
 parser.add_argument(
@@ -1364,7 +1367,8 @@ elif args.m == 'write':
 
 elif args.m == 'dfu':
     if args.t:
-        devdfu = DFU_BLE_CONTROLLER(args.t, init=True, packet_size=args.ps)
+        devdfu = DFU_BLE_CONTROLLER(args.t, init=True, packet_size=args.ps,
+                                    debug=args.debug)
         if devdfu.connected:
             # ASSERT DFU MODE
             assert 'Device Firmware Update Service' in devdfu.services_rsum, 'DFU Mode not available'

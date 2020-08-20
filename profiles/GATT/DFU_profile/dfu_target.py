@@ -205,7 +205,7 @@ class BLE_DFU_TARGET:
                                                     'utf8'))
         self._ble.gatts_write(self._model, bytes(_MODEL_NUMBER, 'utf8'))
         self._ble.gatts_write(self._firm, bytes(_FIRMWARE_REV, 'utf8'))
-
+        self._ble.gatts_set_buffer(self._dfu_packet, 512, True)
         # Timeout 60 s
         self.start_adv_timeout()
         # After 60 seconds resets
@@ -338,7 +338,7 @@ class BLE_DFU_TARGET:
                     if self._received_image_len < self._total_image_size:
                         print('[{:80}] {} %\r'.format(int((self._received_image_len/self._total_image_size)*80)*'#',
                                                       int((self._received_image_len/self._total_image_size)*100)), end='')
-                        if self._received_image_len % 20 == 0:
+                        if self._received_image_len % 512 == 0:
                             self._ble.gatts_write(self._dfu_control_point,
                                                   struct.pack('BB',
                                                                self._opcodes_dict['Packet Receipt Notification'],

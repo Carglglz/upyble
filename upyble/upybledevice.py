@@ -9,12 +9,16 @@ from upyble.servs import ble_services_dict, ble_services_dict_rev
 from upyble.appearances import ble_appearances_dict, ble_appearances_dict_rev
 from upyble.manufacturer import ble_manufacturer_dict
 from upyble.descriptors import ble_descriptors_dict, ble_descriptors_dict_rev
+from datetime import timedelta
 import struct
 import uuid as U_uuid
 import time
 import ast
 from array import array
 import sys
+import os
+
+# TODO: drop char/descriptors dict, xml and formatter by bleak_sigspec
 
 
 def ble_scan(log=False):
@@ -31,15 +35,7 @@ def ble_scan(log=False):
     loop = asyncio.get_event_loop()
     return loop.run_until_complete(run())
 
-# MACOS
 
-
-# NUS = {"6E400001-B5A3-F393-E0A9-E50E24DCCA9E": "Nordic UART Service",
-#        "6E400003-B5A3-F393-E0A9-E50E24DCCA9E": 'TX',
-#        "6E400002-B5A3-F393-E0A9-E50E24DCCA9E": 'RX'}
-#
-# # Linux # if sys.platform linux :
-# if sys.platform == 'linux':
 NUS = {"6e400001-b5a3-f393-e0a9-e50e24dcca9e": "Nordic UART Service",
        "6e400003-b5a3-f393-e0a9-e50e24dcca9e": 'TX',
        "6e400002-b5a3-f393-e0a9-e50e24dcca9e": 'RX'}
@@ -1523,7 +1519,7 @@ class DFUOperationError(Exception):
 
 class DFU_BLE_CONTROLLER(BASE_BLE_DEVICE):
     def __init__(self, scan_dev, init=False, name=None, lenbuff=100,
-                 packet_size=20):
+                 packet_size=20, debug=False):
         super().__init__(scan_dev, init=init, name=name, lenbuff=lenbuff)
         self._dfu_packet_max_size = packet_size
         self._dfu_packet_format = 'B'
@@ -1533,6 +1529,7 @@ class DFU_BLE_CONTROLLER(BASE_BLE_DEVICE):
         self._soft_device_len = b'\x00\x00\x00\x00'
         self._bootloader_len = b'\x00\x00\x00\x00'
         self._image_data = b''
+        self._debug = debug
         self._sending_data_packets = False
         self._dfu_CP_char = 'DFU Control Point'
         self._dfu_Packet_char = 'DFU Packet'
@@ -1565,6 +1562,45 @@ class DFU_BLE_CONTROLLER(BASE_BLE_DEVICE):
         self._opcode_buffer = b''
         self._len_image_data_sent = 0
         self._notification_code = False
+        self._bloc_progress = ["▏", "▎", "▍", "▌", "▋", "▊", "▉"]
+        self._loop_index = 0
+        self._wheel = ['|', '/', '-', "\\"]
+        self._len_total_packets = 0
+        self._t_start = 0
+        # TERMINAL SIZE
+        columns, rows = os.get_terminal_size(0)
+        cnt_size = 65
+        if columns > cnt_size:
+            self._bar_size = int((columns - cnt_size))
+            self.pb = True
+        else:
+            self._bar_size = 1
+            self.pb = False
+
+    def do_pg_bar(self):
+        loop_index_f = (self._len_image_data_sent / self._len_total_packets) * self._bar_size
+        loop_index = int(loop_index_f)
+        loop_index_l = int(round(loop_index_f-loop_index, 1)*6)
+        nb_of_total = "{:.2f}/{:.2f} KB".format(self._len_image_data_sent / (1024**1),
+                                                self._len_total_packets / (1024**1))
+        percentage = self._len_image_data_sent / self._len_total_packets
+        t_elapsed = time.time() - self._t_start
+        t_speed = "{:^2.2f}".format((self._len_image_data_sent/(1024**1))/t_elapsed)
+        ett = self._len_total_packets / (self._len_image_data_sent / t_elapsed)
+                # if pb:
+                #     do_pg_bar(loop_index, wheel, nb_of_total, t_speed,
+                #               t_elapsed, loop_index_l, percentage)
+        l_bloc = self._bloc_progress[loop_index_l]
+        if loop_index == self._bar_size:
+            l_bloc = "█"
+        sys.stdout.write("\033[K")
+        print('▏{}▏{:>2}{:>5} % | {} | {:>5} KB/s | {}/{} s'.format("█" *loop_index + l_bloc  + " "*((self._bar_size+1) - len("█" *loop_index + l_bloc)),
+                                                                        self._wheel[loop_index % 4],
+                                                                        int((percentage)*100),
+                                                                        nb_of_total, t_speed,
+                                                                        str(timedelta(seconds=t_elapsed)).split('.')[0][2:],
+                                                                        str(timedelta(seconds=ett)).split('.')[0][2:]), end='\r')
+        sys.stdout.flush()
 
     def load_image(self, img, len_application=0, len_softdevice=0, len_bootloader=0):
         with open(img, 'rb') as imagefile:
@@ -1601,17 +1637,18 @@ class DFU_BLE_CONTROLLER(BASE_BLE_DEVICE):
         self._init_packet_format = 'HHIH' + len(initpacketlist[4:]) * 'H' + 'H'
         self._init_packet = struct.pack(self._init_packet_format, *initpacketlist)
 
-    def get_opcode_response_callback(self, sender, data, uuid):
+    def get_opcode_response_callback(self, sender, data):
         if not self._sending_data_packets:
             self._opcode_buffer += data
         else:
             self._notification_code, index = struct.unpack('BB', data)
-            if index < 100:
-                print('[{:80}] {} %\r'.format(int((index/100)*80)*'#',
-                                              index), end='')
-            else:
-                print('[{:80}] {} %\r'.format(int((index/100)*80)*'#',
-                                              index))
+            # if index < 100:
+            #     print('[{:80}] {} %\r'.format(int((index/100)*80)*'#',
+            #                                   index), end='')
+            # else:
+            #     print('[{:80}] {} %\r'.format(int((index/100)*80)*'#',
+            #                                   index))
+            self.do_pg_bar()
 
     async def as_write_read_opcode_waitp(self, opcode, response_len, action=None):
         await self.ble_client.start_notify(self.notifiables[self._dfu_CP_char],
@@ -1626,11 +1663,13 @@ class DFU_BLE_CONTROLLER(BASE_BLE_DEVICE):
             await asyncio.sleep(0.01, loop=self.loop)
         await self.ble_client.stop_notify(self.notifiables[self._dfu_CP_char])
         if response_len == 3:
-            print('Resp OPCODE: {}, Request OPCODE: {}, Resp Value: {}'.format(*self._opcode_buffer))
             resp_opcode, req_opcode, resp_value = struct.unpack('BBB', self._opcode_buffer)
-            print('Resp OPCODE: {}, Request OPCODE: {}, Resp Value: {}'.format(self._opcode_rev[resp_opcode],
-                                                                              self._opcode_rev[req_opcode],
-                                                                              self._response_values_codes[resp_value]))
+            if self._debug:
+                print('Resp OPCODE: {}, Request OPCODE: {}, Resp Value: {}'.format(*self._opcode_buffer))
+
+                print('Resp OPCODE: {}, Request OPCODE: {}, Resp Value: {}'.format(self._opcode_rev[resp_opcode],
+                                                                                  self._opcode_rev[req_opcode],
+                                                                                  self._response_values_codes[resp_value]))
             if resp_value in [0x02, 0x03, 0x04, 0x05, 0x06]:
                 raise DFUOperationError(self._response_values_codes[resp_value])
         return self._opcode_buffer
@@ -1646,6 +1685,8 @@ class DFU_BLE_CONTROLLER(BASE_BLE_DEVICE):
 
     async def as_write_data_packages(self, data, response_len=3, callback=None):  # NO CONFIRMATION
         self._sending_data_packets = True
+        self._len_total_packets = len(data)
+        self._t_start = time.time()
         await self.ble_client.start_notify(self.notifiables[self._dfu_CP_char],
                                            self.get_opcode_response_callback)
         if len(data) > self._dfu_packet_max_size:
@@ -1656,18 +1697,20 @@ class DFU_BLE_CONTROLLER(BASE_BLE_DEVICE):
                     callback.emit(i)
                 self._len_image_data_sent += len(data[i:i+self._dfu_packet_max_size])
                 if self._len_image_data_sent < len(data):
-                    if self._len_image_data_sent % 20 == 0:
+                    if self._len_image_data_sent % self._dfu_packet_max_size == 0:
                         while not self._notification_code:
                             await asyncio.sleep(0.01, loop=self.loop)
                         self._notification_code = False
                     else:
-                        print('[{:80}] {} %\r'.format(int((self._len_image_data_sent/len(data))*80)*'#',
-                                                          int((self._len_image_data_sent/len(data))*100)), end='')
+                        # print('[{:80}] {} %\r'.format(int((self._len_image_data_sent/len(data))*80)*'#',
+                        #                                   int((self._len_image_data_sent/len(data))*100)), end='')
+                        self.do_pg_bar()
                 else:
                     while not self._notification_code:
                         await asyncio.sleep(0.01, loop=self.loop)
                     self._notification_code = False
                     self._sending_data_packets = False
+                    print('')
                 # if self._len_image_data_sent < len(data):
                 #     print('[{:80}] {} %\r'.format(int((self._len_image_data_sent/len(data))*80)*'#',
                 #                                   int((self._len_image_data_sent/len(data))*100)), end='')
@@ -1680,11 +1723,12 @@ class DFU_BLE_CONTROLLER(BASE_BLE_DEVICE):
             await asyncio.sleep(0.01, loop=self.loop)
         await self.ble_client.stop_notify(self.notifiables[self._dfu_CP_char])
         if response_len == 3:
-            print('Resp OPCODE: {}, Request OPCODE: {}, Resp Value: {}'.format(*self._opcode_buffer))
             resp_opcode, req_opcode, resp_value = struct.unpack('BBB', self._opcode_buffer)
-            print('Resp OPCODE: {}, Request OPCODE: {}, Resp Value: {}'.format(self._opcode_rev[resp_opcode],
-                                                                              self._opcode_rev[req_opcode],
-                                                                              self._response_values_codes[resp_value]))
+            if self._debug:
+                print('Resp OPCODE: {}, Request OPCODE: {}, Resp Value: {}'.format(*self._opcode_buffer))
+                print('Resp OPCODE: {}, Request OPCODE: {}, Resp Value: {}'.format(self._opcode_rev[resp_opcode],
+                                                                                  self._opcode_rev[req_opcode],
+                                                                                  self._response_values_codes[resp_value]))
             if resp_value in [0x02, 0x03, 0x04, 0x05, 0x06]:
                 raise DFUOperationError(self._response_values_codes[resp_value])
         return self._opcode_buffer
@@ -1755,9 +1799,13 @@ class DFU_BLE_CONTROLLER(BASE_BLE_DEVICE):
             self.load_image(file)
             self.write_image_size()
             self.write_init_packet()
+            print('Sending {} ...'.format(file))
             self.write_image_data()
+            print('Validating {}...'.format(file))
             self.validate_image_data()
+            print('File {} uploaded successfully'.format(file))
             self.activate_image_and_reset()
+            print('Rebooting device now')
             time.sleep(1)
             if self.is_connected():
                 self.disconnect()
